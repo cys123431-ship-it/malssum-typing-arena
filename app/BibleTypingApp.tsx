@@ -283,7 +283,8 @@ export function BibleTypingApp() {
   const currentUnit = bible?.units[currentIndex];
   const currentBook = currentUnit ? booksByCode.get(currentUnit.b) : undefined;
   const elapsedSeconds = startedAt ? Math.max(0.1, (clock - startedAt) / 1000) : 0;
-  const liveCpm = startedAt ? Math.round((typed.length / elapsedSeconds) * 60) : 0;
+  const liveCorrectKeystrokes = Math.max(0, keystrokes - errors);
+  const liveCpm = startedAt ? Math.round((liveCorrectKeystrokes / elapsedSeconds) * 60) : 0;
   const liveAccuracy = keystrokes ? Math.max(0, ((keystrokes - errors) / keystrokes) * 100) : 100;
   const verseProgress = currentUnit ? Math.min(1, typed.length / Math.max(1, currentUnit.t.length)) : 0;
   const activeSegment = Math.min(10, Math.floor(verseProgress * 10) + 1);
@@ -350,8 +351,9 @@ export function BibleTypingApp() {
     if (!bible || !currentUnit || result || completionLockRef.current) return;
     completionLockRef.current = true;
     const durationSeconds = Math.max(0.1, (Date.now() - start) / 1000);
-    const cpm = Math.round((currentUnit.t.length / durationSeconds) * 60);
-    const accuracy = Math.max(0, Number((((finalKeystrokes - finalErrors) / Math.max(1, finalKeystrokes)) * 100).toFixed(1)));
+    const correctKeystrokes = Math.max(0, finalKeystrokes - finalErrors);
+    const cpm = Math.round((correctKeystrokes / durationSeconds) * 60);
+    const accuracy = Math.max(0, Number(((correctKeystrokes / Math.max(1, finalKeystrokes)) * 100).toFixed(1)));
     const nextIndex = (currentIndex + 1) % bible.units.length;
     const isNew = !completedSet.has(currentUnit.id);
     const completedAt = new Date().toISOString();
@@ -448,7 +450,9 @@ export function BibleTypingApp() {
     }
 
     setTyped(nextValue);
-    if (start && nextValue === currentUnit.t) finishPractice(nextKeystrokes, nextErrors, start);
+    if (start && nextValue.length === currentUnit.t.length) {
+      finishPractice(nextKeystrokes, nextErrors, start);
+    }
   }, [currentUnit, finishPractice, result]);
 
   function handleInput(event: ChangeEvent<HTMLTextAreaElement>) {
