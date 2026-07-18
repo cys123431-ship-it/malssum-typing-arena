@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 
 type View = "home" | "library" | "practice" | "progress";
 
@@ -284,6 +285,14 @@ export function BibleTypingApp() {
   const elapsedSeconds = startedAt ? Math.max(0.1, (clock - startedAt) / 1000) : 0;
   const liveCpm = startedAt ? Math.round((typed.length / elapsedSeconds) * 60) : 0;
   const liveAccuracy = keystrokes ? Math.max(0, ((keystrokes - errors) / keystrokes) * 100) : 100;
+  const verseProgress = currentUnit ? Math.min(1, typed.length / Math.max(1, currentUnit.t.length)) : 0;
+  const activeSegment = Math.min(10, Math.floor(verseProgress * 10) + 1);
+  let currentCombo = 0;
+  if (currentUnit) {
+    for (let index = 0; index < typed.length; index += 1) {
+      currentCombo = typed[index] === currentUnit.t[index] ? currentCombo + 1 : 0;
+    }
+  }
 
   const bookProgress = useMemo(() => {
     const map = new Map<string, { completed: number; percent: number }>();
@@ -511,7 +520,7 @@ export function BibleTypingApp() {
   ];
 
   return (
-    <div className="app-frame">
+    <div className={`app-frame ${view === "practice" ? "app-frame--practice" : ""}`}>
       <aside className="sidebar">
         <button className="brand" onClick={() => setView("home")} aria-label="말씀타자 홈">
           <span className="brand__mark">말씀</span>
@@ -677,25 +686,41 @@ export function BibleTypingApp() {
 
           {view === "practice" && currentUnit && (
             <div className="page page--practice">
-              <header className="practice-header">
-                <button className="back-button" onClick={() => setView("home")} aria-label="연습을 닫고 홈으로">←</button>
-                <div><span>{currentBook?.testament}</span><h1>{referenceFor(currentUnit, currentBook)}</h1></div>
-                <button className="text-button" onClick={() => setView("library")}>범위 선택</button>
-              </header>
-
               <section className={`typing-stage ${result ? "is-complete" : ""}`}>
-                <div className="typing-stage__meta">
-                  <span>오늘 {todayCompleted}/{progress.dailyGoal}절</span>
-                  <div className="wide-track"><i style={{ width: `${todayPercent}%` }} /></div>
-                  <span>{((currentIndex + 1) / bible.units.length * 100).toFixed(1)}%</span>
-                </div>
+                <header className="practice-header">
+                  <button className="practice-back" onClick={() => setView("home")} aria-label="연습을 닫고 홈으로">
+                    <ArrowLeftIcon size={32} weight="regular" aria-hidden="true" />
+                  </button>
+                  <h1>{referenceFor(currentUnit, currentBook)}</h1>
+                  <p className="practice-daily">오늘 <strong>{todayCompleted}/{progress.dailyGoal}</strong>절</p>
+                  <p className="practice-streak">연속 <strong>{streak}</strong></p>
+                </header>
 
                 {!result ? (
                   <>
+                    <ol
+                      className="verse-segments"
+                      style={{ "--segment-progress": `${((activeSegment - 1) / 9) * 100}%` } as CSSProperties}
+                      aria-label={`현재 ${activeSegment}구간, 전체 10구간`}
+                    >
+                      {Array.from({ length: 10 }, (_, index) => {
+                        const segment = index + 1;
+                        const state = segment < activeSegment
+                          ? "is-complete"
+                          : segment === activeSegment ? "is-active" : "";
+                        return (
+                          <li className={state} key={segment}>
+                            <span>{segment}</span>
+                            {segment === activeSegment && <strong>{segment}구간</strong>}
+                          </li>
+                        );
+                      })}
+                    </ol>
+
                     <div className="live-stats" aria-live="polite">
-                      <div><span>타수</span><strong>{liveCpm || "—"}</strong><small>타/분</small></div>
-                      <div><span>정확도</span><strong>{keystrokes ? liveAccuracy.toFixed(1) : "—"}</strong><small>%</small></div>
-                      <div><span>시간</span><strong>{startedAt ? elapsedSeconds.toFixed(1) : "—"}</strong><small>초</small></div>
+                      <div><span>정확 콤보</span><strong>{currentCombo}</strong></div>
+                      <div><strong>{liveCpm || 0}</strong><small>타/분</small></div>
+                      <div><span>정확도</span><strong>{keystrokes ? liveAccuracy.toFixed(0) : 100}</strong><small>%</small></div>
                     </div>
                     <div className="verse-display" aria-label={`따라 쓸 구절: ${currentUnit.t}`}>
                       {Array.from(currentUnit.t).map((character, index) => {
@@ -706,7 +731,7 @@ export function BibleTypingApp() {
                       })}
                     </div>
                     <div className="typing-input-wrap">
-                      <label htmlFor="typing-input">아래에 그대로 입력하세요</label>
+                      <label className="sr-only" htmlFor="typing-input">말씀을 그대로 입력하세요</label>
                       <textarea
                         ref={inputRef}
                         id="typing-input"
@@ -721,19 +746,18 @@ export function BibleTypingApp() {
                           applyTypedValue(event.currentTarget.value, compositionBaseRef.current);
                         }}
                         onPaste={(event) => event.preventDefault()}
-                        placeholder="첫 글자를 입력하면 기록이 시작됩니다"
+                        placeholder="말씀을 따라 입력하세요"
                         autoCapitalize="off"
                         autoCorrect="off"
                         autoComplete="off"
                         spellCheck={false}
-                        rows={3}
+                        rows={1}
                       />
-                      <div className="input-progress"><span style={{ width: `${(typed.length / currentUnit.t.length) * 100}%` }} /></div>
                     </div>
                     <div className="practice-actions">
                       <button className="text-button" onClick={resetPractice}>처음부터</button>
                       <span>오타도 기록의 일부예요. 천천히 정확하게 써보세요.</span>
-                      <button className="text-button" onClick={goRandom}>다른 구절</button>
+                      <button className="text-button" onClick={goRandom}>다른 구절 <ArrowRightIcon size={20} weight="bold" aria-hidden="true" /></button>
                     </div>
                   </>
                 ) : (
@@ -748,7 +772,7 @@ export function BibleTypingApp() {
                     </div>
                     <p className="result-verse">“{currentUnit.t}”</p>
                     <div className="button-row button-row--center">
-                      <button className="button button--primary" onClick={goToNext}>다음 구절 <span>→</span></button>
+                      <button className="button button--primary" onClick={goToNext}>다음 구절 <ArrowRightIcon size={18} weight="bold" aria-hidden="true" /></button>
                       <button className="button button--quiet" onClick={resetPractice}>한 번 더</button>
                     </div>
                   </div>
