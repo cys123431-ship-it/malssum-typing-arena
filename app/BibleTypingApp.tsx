@@ -9,7 +9,14 @@ import {
   useRef,
   useState,
 } from "react";
-import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ListIcon,
+  MoonIcon,
+  SunIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 
 type View = "home" | "library" | "practice" | "progress";
 
@@ -104,6 +111,11 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("ko-KR").format(Math.round(value));
 }
 
+function formatToday(date = new Date()) {
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}. ${weekdays[date.getDay()]}`;
+}
+
 function mergeProgress(local: ProgressState, remote: Partial<ProgressState> | null) {
   if (!remote) return local;
   const remoteHasHistory = (remote.totalSessions ?? 0) > 0;
@@ -172,6 +184,7 @@ export function BibleTypingApp() {
   const [result, setResult] = useState<SessionResult | null>(null);
   const [libraryTestament, setLibraryTestament] = useState<"전체" | "구약" | "신약">("전체");
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState("기기 저장");
   const [loadingError, setLoadingError] = useState("");
 
@@ -282,6 +295,8 @@ export function BibleTypingApp() {
     : 0;
   const currentUnit = bible?.units[currentIndex];
   const currentBook = currentUnit ? booksByCode.get(currentUnit.b) : undefined;
+  const homeUnit = bible?.units[progress.currentIndex] ?? bible?.units[0];
+  const homeBook = homeUnit ? booksByCode.get(homeUnit.b) : undefined;
   const elapsedSeconds = startedAt ? Math.max(0.1, (clock - startedAt) / 1000) : 0;
   const liveCorrectKeystrokes = Math.max(0, keystrokes - errors);
   const liveCpm = startedAt ? Math.round((liveCorrectKeystrokes / elapsedSeconds) * 60) : 0;
@@ -524,11 +539,10 @@ export function BibleTypingApp() {
   ];
 
   return (
-    <div className={`app-frame ${view === "practice" ? "app-frame--practice" : ""}`}>
+    <div className={`app-frame app-frame--${view} ${view === "practice" ? "app-frame--practice" : ""}`}>
       <aside className="sidebar">
         <button className="brand" onClick={() => setView("home")} aria-label="말씀타자 홈">
-          <span className="brand__mark">말씀</span>
-          <span className="brand__copy"><strong>말씀타자</strong><small>Bible typing ritual</small></span>
+          <span className="brand__wordmark">말씀타자</span>
         </button>
 
         <nav className="side-nav" aria-label="주요 메뉴">
@@ -544,115 +558,95 @@ export function BibleTypingApp() {
           ))}
         </nav>
 
-        <div className="sidebar-goal">
-          <div>
-            <span className="eyebrow">오늘의 목표</span>
-            <strong>{todayCompleted}<small> / {progress.dailyGoal}절</small></strong>
-          </div>
-          <div className="mini-track"><span style={{ width: `${todayPercent}%` }} /></div>
-          <p>{todayPercent >= 100 ? "오늘의 목표를 완성했어요." : "한 절씩, 서두르지 않아도 좋아요."}</p>
-        </div>
-
         <div className="sidebar-footer">
-          <span className={`sync-dot ${syncStatus === "동기화됨" ? "is-synced" : ""}`} />
-          {syncStatus}
+          <button
+            className="theme-switch"
+            onClick={() => setTheme((value) => value === "light" ? "dark" : "light")}
+            aria-label={theme === "light" ? "다크 모드로 전환" : "라이트 모드로 전환"}
+          >
+            {theme === "light" ? <MoonIcon size={18} aria-hidden="true" /> : <SunIcon size={18} aria-hidden="true" />}
+            {theme === "light" ? "다크 모드" : "라이트 모드"}
+          </button>
+          <small><span className={`sync-dot ${syncStatus === "동기화됨" ? "is-synced" : ""}`} />{syncStatus}</small>
         </div>
       </aside>
 
       <div className="workspace">
         <header className="mobile-header">
-          <button className="brand" onClick={() => setView("home")} aria-label="말씀타자 홈">
-            <span className="brand__mark">말씀</span>
-            <span className="brand__copy"><strong>말씀타자</strong></span>
-          </button>
-          <button
-            className="icon-button"
-            onClick={() => setTheme((value) => value === "light" ? "dark" : "light")}
-            aria-label={theme === "light" ? "어두운 화면으로 전환" : "밝은 화면으로 전환"}
-          >
-            {theme === "light" ? "밤" : "낮"}
-          </button>
+          <div className="mobile-header__top">
+            <button className="brand" onClick={() => setView("home")} aria-label="말씀타자 홈">
+              <span className="brand__wordmark">말씀타자</span>
+            </button>
+            <button
+              className="mobile-menu-button"
+              onClick={() => setMobileMenuOpen((value) => !value)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
+            >
+              {mobileMenuOpen ? <XIcon size={29} aria-hidden="true" /> : <ListIcon size={31} aria-hidden="true" />}
+            </button>
+          </div>
+          <nav className="mobile-tabs" aria-label="모바일 주요 메뉴">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                className={view === item.id ? "is-active" : ""}
+                onClick={() => { setView(item.id); setMobileMenuOpen(false); }}
+                aria-current={view === item.id ? "page" : undefined}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+          {mobileMenuOpen && (
+            <div className="mobile-menu-panel">
+              <button onClick={() => { setTheme((value) => value === "light" ? "dark" : "light"); setMobileMenuOpen(false); }}>
+                {theme === "light" ? <MoonIcon size={18} aria-hidden="true" /> : <SunIcon size={18} aria-hidden="true" />}
+                {theme === "light" ? "다크 모드로 보기" : "라이트 모드로 보기"}
+              </button>
+              <span><i className={`sync-dot ${syncStatus === "동기화됨" ? "is-synced" : ""}`} />{syncStatus}</span>
+            </div>
+          )}
         </header>
-
-        <div className="desktop-utilities">
-          <span>개역개정4판 · {formatNumber(bible.totalVerses)}절</span>
-          <button
-            className="theme-toggle"
-            onClick={() => setTheme((value) => value === "light" ? "dark" : "light")}
-          >
-            <span>{theme === "light" ? "어둡게" : "밝게"}</span>
-            <i className={theme === "dark" ? "is-on" : ""} />
-          </button>
-        </div>
 
         <main className="main-content">
           {view === "home" && (
             <div className="page page--home">
-              <section className="hero-card">
-                <div className="hero-card__copy">
-                  <span className="eyebrow">오늘의 말씀 연습</span>
-                  <h1>읽고, 따라 쓰며,<br /><em>마음에 오래.</em></h1>
-                  <p>
-                    마지막 자리에서 계속할 수 있어요.
-                    <strong>{referenceFor(bible.units[progress.currentIndex] ?? bible.units[0], booksByCode.get((bible.units[progress.currentIndex] ?? bible.units[0]).b))}</strong>
-                  </p>
-                  <div className="button-row">
-                    <button className="button button--primary" onClick={() => beginPractice(progress.currentIndex)}>
-                      이어서 연습하기 <span>↗</span>
-                    </button>
-                    <button className="button button--quiet" onClick={startRandomPractice}>무작위 한 절</button>
+              <section className="home-editorial">
+                <p className="home-date">{formatToday()}</p>
+
+                <div className="home-feature">
+                  <div className="home-feature__copy">
+                    <span className="home-kicker">오늘의 말씀</span>
+                    <h1>읽고, 따라 쓰며,<br />마음에 오래.</h1>
+                    {homeUnit && <p className="home-reference">{referenceFor(homeUnit, homeBook)}</p>}
+                    {homeUnit && <p className="home-verse-preview">{homeUnit.t}</p>}
+                    <span className="home-accent-line" aria-hidden="true" />
+                    <div className="home-actions">
+                      <button className="home-primary" onClick={() => beginPractice(progress.currentIndex)}>
+                        이어서 연습하기 <ArrowRightIcon size={21} weight="regular" aria-hidden="true" />
+                      </button>
+                      <button className="home-random" onClick={startRandomPractice}>한 절 무작위</button>
+                    </div>
+                  </div>
+
+                  <div className="home-goal" aria-label={`오늘 ${todayCompleted}/${progress.dailyGoal}절`}>
+                    <p>오늘 <strong>{todayCompleted}/{progress.dailyGoal}</strong></p>
+                    <ol>
+                      {Array.from({ length: progress.dailyGoal }, (_, index) => (
+                        <li className={index < todayCompleted ? "is-complete" : ""} key={index + 1}>
+                          <span>{index + 1}</span><i />
+                        </li>
+                      ))}
+                    </ol>
                   </div>
                 </div>
-                <div className="hero-card__progress">
-                  <ProgressRing
-                    percent={todayPercent}
-                    value={`${todayCompleted}/${progress.dailyGoal}`}
-                    caption="오늘의 절"
-                  />
-                  <div className="streak-pill"><span>연속</span><strong>{streak}일</strong></div>
-                </div>
-                <div className="hero-card__verse" aria-hidden="true">
-                  <span>“</span>
-                  <p>{(bible.units[progress.currentIndex] ?? bible.units[0]).t.slice(0, 72)}{(bible.units[progress.currentIndex] ?? bible.units[0]).t.length > 72 ? "…" : ""}</p>
-                </div>
-              </section>
 
-              <section className="stat-grid" aria-label="연습 요약">
-                <article className="stat-card stat-card--wide">
-                  <div className="stat-card__top"><span>전체 진도</span><small>{overallPercent.toFixed(2)}%</small></div>
-                  <strong>{formatNumber(completedVerses)}<small> / {formatNumber(bible.totalVerses)}절</small></strong>
-                  <div className="wide-track"><span style={{ width: `${Math.max(overallPercent, completedVerses ? 0.4 : 0)}%` }} /></div>
-                </article>
-                <article className="stat-card">
-                  <span>평균 정확도</span>
-                  <strong>{averageAccuracy ? averageAccuracy.toFixed(1) : "—"}<small>{averageAccuracy ? "%" : ""}</small></strong>
-                  <p>최고 {progress.bestAccuracy ? `${progress.bestAccuracy.toFixed(1)}%` : "기록 전"}</p>
-                </article>
-                <article className="stat-card stat-card--accent">
-                  <span>최고 타수</span>
-                  <strong>{progress.bestCpm || "—"}<small>{progress.bestCpm ? "타/분" : ""}</small></strong>
-                  <p>{formatNumber(progress.totalSessions)}번의 완주</p>
-                </article>
-              </section>
-
-              <section className="section-block">
-                <div className="section-heading">
-                  <div><span className="eyebrow">계속 이어가기</span><h2>성경별 진도</h2></div>
-                  <button onClick={() => setView("library")}>66권 모두 보기 <span>→</span></button>
-                </div>
-                <div className="continue-grid">
-                  {bible.books.filter((book) => (bookProgress.get(book.code)?.percent ?? 0) < 100).slice(0, 4).map((book) => {
-                    const value = bookProgress.get(book.code) ?? { completed: 0, percent: 0 };
-                    return (
-                      <button className="book-progress-card" key={book.code} onClick={() => beginBook(book)}>
-                        <div className="book-progress-card__top"><span>{book.testament}</span><small>{value.percent.toFixed(1)}%</small></div>
-                        <h3>{book.name}</h3>
-                        <p>{formatNumber(value.completed)} / {formatNumber(book.verses)}절</p>
-                        <div className="mini-track"><span style={{ width: `${value.percent}%` }} /></div>
-                      </button>
-                    );
-                  })}
-                </div>
+                <section className="home-summary" aria-label="연습 요약">
+                  <div><span>전체 진도</span><strong>{formatNumber(completedVerses)}<small>/{formatNumber(bible.totalVerses)}절</small></strong></div>
+                  <div><span>평균 정확도</span><strong>{averageAccuracy ? averageAccuracy.toFixed(1) : "—"}<small>{averageAccuracy ? "%" : ""}</small></strong></div>
+                  <div><span>최고 타수</span><strong>{progress.bestCpm || "—"}<small>{progress.bestCpm ? "타/분" : ""}</small></strong></div>
+                </section>
               </section>
             </div>
           )}
@@ -716,6 +710,7 @@ export function BibleTypingApp() {
                           <li className={state} key={segment}>
                             <span>{segment}</span>
                             {segment === activeSegment && <strong>{segment}구간</strong>}
+                            {segment < 10 && <i aria-hidden="true" />}
                           </li>
                         );
                       })}
