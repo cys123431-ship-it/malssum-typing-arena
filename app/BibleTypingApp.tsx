@@ -724,9 +724,14 @@ export function BibleTypingApp() {
                     </div>
                     <div className="verse-display" aria-label={`따라 쓸 구절: ${currentUnit.t}`}>
                       {Array.from(currentUnit.t).map((character, index) => {
+                        const characterSegment = Math.min(10, Math.floor((index / currentUnit.t.length) * 10) + 1);
                         const state = index < typed.length
-                          ? typed[index] === character ? "is-correct" : "is-wrong"
-                          : index === typed.length ? "is-current" : "";
+                          ? typed[index] === character
+                            ? characterSegment === activeSegment ? "is-correct is-active-segment" : "is-correct"
+                            : "is-wrong"
+                          : index === typed.length
+                            ? "is-current is-active-segment"
+                            : characterSegment === activeSegment ? "is-active-segment" : "";
                         return <span className={state} key={`${index}-${character}`}>{character}</span>;
                       })}
                     </div>
@@ -755,8 +760,6 @@ export function BibleTypingApp() {
                       />
                     </div>
                     <div className="practice-actions">
-                      <button className="text-button" onClick={resetPractice}>처음부터</button>
-                      <span>오타도 기록의 일부예요. 천천히 정확하게 써보세요.</span>
                       <button className="text-button" onClick={goRandom}>다른 구절 <ArrowRightIcon size={20} weight="bold" aria-hidden="true" /></button>
                     </div>
                   </>
