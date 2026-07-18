@@ -288,7 +288,6 @@ export function BibleTypingApp() {
   const overallPercent = bible ? (completedVerses / bible.totalVerses) * 100 : 0;
   const today = progress.days.find((day) => day.date === localDateKey());
   const todayCompleted = today?.versesCompleted ?? 0;
-  const todayPercent = Math.min(100, (todayCompleted / progress.dailyGoal) * 100);
   const streak = calculateStreak(progress.days);
   const averageAccuracy = progress.totalTypedChars
     ? (progress.correctChars / progress.totalTypedChars) * 100

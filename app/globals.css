@@ -3073,9 +3073,16 @@ html[data-theme="light"] .typing-stage.is-complete .button--quiet {
   html[data-theme="light"] .practice-streak {
     position: absolute;
     top: 104px;
-    right: 31%;
+    right: auto;
+    left: calc(50% + 49px);
     display: block;
     grid-column: auto;
+  }
+
+  html[data-theme="light"] .practice-streak::before {
+    content: "·";
+    margin-right: 12px;
+    color: rgba(15, 61, 50, 0.52);
   }
 
   html[data-theme="light"] .verse-segments {
