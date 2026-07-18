@@ -398,6 +398,7 @@ button:disabled {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.55fr);
+  grid-template-rows: auto auto;
   min-height: 430px;
   overflow: hidden;
   border-radius: 34px;
@@ -481,7 +482,7 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 44px 42px 116px 18px;
+  padding: 44px 42px 44px 18px;
 }
 
 .progress-ring {
@@ -531,7 +532,7 @@ button:disabled {
 .streak-pill {
   position: absolute;
   right: 26px;
-  bottom: 88px;
+  bottom: 32px;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -553,12 +554,10 @@ button:disabled {
 }
 
 .hero-card__verse {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  position: relative;
   z-index: 1;
   display: flex;
+  grid-column: 1 / -1;
   align-items: flex-start;
   gap: 13px;
   min-height: 88px;
@@ -1540,7 +1539,7 @@ button:disabled {
   }
 
   .hero-card__copy {
-    padding: 38px 28px 112px;
+    padding: 38px 28px;
   }
 
   .hero-card__copy h1 {
@@ -1549,7 +1548,7 @@ button:disabled {
 
   .hero-card__progress {
     align-items: flex-start;
-    padding: 46px 22px 120px 0;
+    padding: 46px 22px;
   }
 
   .progress-ring {
@@ -1564,7 +1563,7 @@ button:disabled {
 
   .streak-pill {
     right: 18px;
-    bottom: 92px;
+    bottom: 34px;
   }
 
   .hero-card__verse {
