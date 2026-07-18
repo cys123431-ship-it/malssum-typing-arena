@@ -1595,12 +1595,13 @@ button:disabled {
   }
 
   .hero-card {
-    display: block;
-    min-height: 540px;
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
   }
 
   .hero-card__copy {
-    padding: 34px 24px 0;
+    padding: 34px 24px 28px;
   }
 
   .hero-card__copy h1 {
@@ -1618,10 +1619,12 @@ button:disabled {
   }
 
   .hero-card__progress {
-    position: absolute;
-    right: 18px;
-    bottom: 92px;
-    padding: 0;
+    position: relative;
+    right: auto;
+    bottom: auto;
+    min-height: 126px;
+    justify-content: flex-end;
+    padding: 0 22px 18px;
   }
 
   .hero-card__progress .progress-ring {
@@ -1638,11 +1641,15 @@ button:disabled {
   }
 
   .streak-pill {
-    right: 116px;
-    bottom: 26px;
+    right: 134px;
+    bottom: 34px;
   }
 
   .hero-card__verse {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
     min-height: 82px;
     padding: 17px 22px;
   }

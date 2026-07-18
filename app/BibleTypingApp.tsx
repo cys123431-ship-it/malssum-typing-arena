@@ -180,6 +180,8 @@ export function BibleTypingApp() {
   const errorsRef = useRef(0);
   const isComposingRef = useRef(false);
   const compositionBaseRef = useRef("");
+  const sessionResultShownRef = useRef(false);
+  const completionLockRef = useRef(false);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("bible-typing-theme");
@@ -307,17 +309,27 @@ export function BibleTypingApp() {
     errorsRef.current = 0;
     isComposingRef.current = false;
     compositionBaseRef.current = "";
+    completionLockRef.current = false;
     window.setTimeout(() => inputRef.current?.focus(), 40);
   }, []);
 
-  const beginPractice = useCallback((index: number) => {
+  const openPractice = useCallback((index: number, startsNewSession: boolean) => {
     if (!bible) return;
     const safeIndex = Math.max(0, Math.min(index, bible.units.length - 1));
+    if (startsNewSession) sessionResultShownRef.current = false;
     setCurrentIndex(safeIndex);
     setProgress((previous) => ({ ...previous, currentIndex: safeIndex }));
     setView("practice");
     resetPractice();
   }, [bible, resetPractice]);
+
+  const beginPractice = useCallback((index: number) => {
+    openPractice(index, true);
+  }, [openPractice]);
+
+  const continuePractice = useCallback((index: number) => {
+    openPractice(index, false);
+  }, [openPractice]);
 
   const beginBook = useCallback((book: BibleBook) => {
     const indices = indicesByBook.get(book.code) ?? [];
@@ -326,7 +338,8 @@ export function BibleTypingApp() {
   }, [beginPractice, bible, completedSet, indicesByBook]);
 
   const finishPractice = useCallback((finalKeystrokes: number, finalErrors: number, start: number) => {
-    if (!bible || !currentUnit || result) return;
+    if (!bible || !currentUnit || result || completionLockRef.current) return;
+    completionLockRef.current = true;
     const durationSeconds = Math.max(0.1, (Date.now() - start) / 1000);
     const cpm = Math.round((currentUnit.t.length / durationSeconds) * 60);
     const accuracy = Math.max(0, Number((((finalKeystrokes - finalErrors) / Math.max(1, finalKeystrokes)) * 100).toFixed(1)));
@@ -343,8 +356,12 @@ export function BibleTypingApp() {
       isNew,
     };
 
-    setResult(session);
-    setClock(Date.now());
+    const shouldShowResult = !sessionResultShownRef.current;
+    if (shouldShowResult) {
+      sessionResultShownRef.current = true;
+      setResult(session);
+      setClock(Date.now());
+    }
     setProgress((previous) => {
       const ids = isNew ? [...previous.completedIds, currentUnit.id] : previous.completedIds;
       const dayKey = localDateKey();
@@ -394,7 +411,8 @@ export function BibleTypingApp() {
     }).catch(() => setSyncStatus("기기 저장"));
 
     if (navigator.vibrate) navigator.vibrate([25, 35, 25]);
-  }, [bible, completedSet, currentIndex, currentUnit, result]);
+    if (!shouldShowResult) continuePractice(nextIndex);
+  }, [bible, completedSet, continuePractice, currentIndex, currentUnit, result]);
 
   const applyTypedValue = useCallback((value: string, baseline: string) => {
     if (!currentUnit || result) return;
@@ -435,14 +453,24 @@ export function BibleTypingApp() {
 
   function goToNext() {
     if (!bible) return;
-    beginPractice((currentIndex + 1) % bible.units.length);
+    continuePractice((currentIndex + 1) % bible.units.length);
   }
 
-  function goRandom() {
+  function getRandomIndex() {
     if (!bible) return;
     let index = Math.floor(Math.random() * bible.units.length);
     if (index === currentIndex) index = (index + 1) % bible.units.length;
-    beginPractice(index);
+    return index;
+  }
+
+  function startRandomPractice() {
+    const index = getRandomIndex();
+    if (index !== undefined) beginPractice(index);
+  }
+
+  function goRandom() {
+    const index = getRandomIndex();
+    if (index !== undefined) continuePractice(index);
   }
 
   const achievements = [
@@ -559,7 +587,7 @@ export function BibleTypingApp() {
                     <button className="button button--primary" onClick={() => beginPractice(progress.currentIndex)}>
                       이어서 연습하기 <span>↗</span>
                     </button>
-                    <button className="button button--quiet" onClick={goRandom}>무작위 한 절</button>
+                    <button className="button button--quiet" onClick={startRandomPractice}>무작위 한 절</button>
                   </div>
                 </div>
                 <div className="hero-card__progress">
