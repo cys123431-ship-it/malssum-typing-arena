@@ -19,6 +19,7 @@ import {
 } from "@phosphor-icons/react";
 
 type View = "home" | "library" | "practice" | "progress";
+type VisualTheme = "classic" | "type-console";
 
 type BibleUnit = {
   id: string;
@@ -78,7 +79,14 @@ type ProgressState = {
   recent: SessionResult[];
 };
 
+type WordRange = {
+  text: string;
+  start: number;
+  end: number;
+};
+
 const STORAGE_KEY = "bible-typing-progress-v1";
+const VISUAL_THEME_STORAGE_KEY = "bible-typing-visual-theme";
 
 function emptyProgress(): ProgressState {
   return {
@@ -171,6 +179,23 @@ function ProgressRing({ percent, value, caption, compact = false }: {
   );
 }
 
+function ThemeFamilyPicker({ value, onChange, compact = false }: {
+  value: VisualTheme;
+  onChange: (value: VisualTheme) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className={`theme-family-picker ${compact ? "is-compact" : ""}`} role="group" aria-label="디자인 테마 선택">
+      <button className={value === "classic" ? "is-active" : ""} onClick={() => onChange("classic")} aria-pressed={value === "classic"}>
+        기존 테마
+      </button>
+      <button className={value === "type-console" ? "is-active" : ""} onClick={() => onChange("type-console")} aria-pressed={value === "type-console"}>
+        활자 콘솔
+      </button>
+    </div>
+  );
+}
+
 export function BibleTypingApp() {
   const [bible, setBible] = useState<BibleData | null>(null);
   const [progress, setProgress] = useState<ProgressState>(emptyProgress);
@@ -178,12 +203,13 @@ export function BibleTypingApp() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [typed, setTyped] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [clock, setClock] = useState(Date.now());
+  const [clock, setClock] = useState(0);
   const [keystrokes, setKeystrokes] = useState(0);
   const [errors, setErrors] = useState(0);
   const [result, setResult] = useState<SessionResult | null>(null);
   const [libraryTestament, setLibraryTestament] = useState<"전체" | "구약" | "신약">("전체");
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [visualTheme, setVisualTheme] = useState<VisualTheme>("classic");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState("기기 저장");
   const [loadingError, setLoadingError] = useState("");
@@ -200,6 +226,8 @@ export function BibleTypingApp() {
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("bible-typing-theme");
     const preferredDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    // Hydrate the existing persisted preference after the client mounts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(savedTheme === "dark" || (!savedTheme && preferredDark) ? "dark" : "light");
   }, []);
 
@@ -207,6 +235,18 @@ export function BibleTypingApp() {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("bible-typing-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    const savedVisualTheme = window.localStorage.getItem(VISUAL_THEME_STORAGE_KEY);
+    // Match the existing light/dark preference hydration pattern without changing its storage behavior.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (savedVisualTheme === "type-console") setVisualTheme("type-console");
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.visualTheme = visualTheme;
+    window.localStorage.setItem(VISUAL_THEME_STORAGE_KEY, visualTheme);
+  }, [visualTheme]);
 
   useEffect(() => {
     let cancelled = false;
@@ -302,6 +342,16 @@ export function BibleTypingApp() {
   const liveAccuracy = keystrokes ? Math.max(0, ((keystrokes - errors) / keystrokes) * 100) : 100;
   const verseProgress = currentUnit ? Math.min(1, typed.length / Math.max(1, currentUnit.t.length)) : 0;
   const activeSegment = Math.min(10, Math.floor(verseProgress * 10) + 1);
+  const consoleWords = useMemo<WordRange[]>(() => {
+    if (!currentUnit) return [];
+    return Array.from(currentUnit.t.matchAll(/\S+/g)).map((match) => ({
+      text: match[0],
+      start: match.index,
+      end: match.index + match[0].length,
+    }));
+  }, [currentUnit]);
+  const activeConsoleWordIndex = Math.max(0, consoleWords.findIndex((word) => typed.length <= word.end));
+  const visibleConsoleWords = consoleWords.slice(activeConsoleWordIndex, activeConsoleWordIndex + 5);
   let currentCombo = 0;
   if (currentUnit) {
     for (let index = 0; index < typed.length; index += 1) {
@@ -500,6 +550,36 @@ export function BibleTypingApp() {
     if (index !== undefined) continuePractice(index);
   }
 
+  useEffect(() => {
+    if (visualTheme !== "type-console") return;
+
+    function handleConsoleShortcut(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const isInteractive = target?.matches("input, textarea, select, button, a, [contenteditable='true']") ?? false;
+
+      if (event.key === "Escape" && view === "practice") {
+        event.preventDefault();
+        setView("home");
+        return;
+      }
+
+      if (view !== "home" || isInteractive || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key === "Enter") {
+        event.preventDefault();
+        beginPractice(progress.currentIndex);
+      } else if (event.key.toLowerCase() === "r") {
+        event.preventDefault();
+        if (!bible) return;
+        let index = Math.floor(Math.random() * bible.units.length);
+        if (index === currentIndex) index = (index + 1) % bible.units.length;
+        beginPractice(index);
+      }
+    }
+
+    window.addEventListener("keydown", handleConsoleShortcut);
+    return () => window.removeEventListener("keydown", handleConsoleShortcut);
+  }, [beginPractice, bible, currentIndex, progress.currentIndex, visualTheme, view]);
+
   const achievements = [
     { title: "첫 문장", description: "첫 구절을 완주했어요", unlocked: completedVerses >= 1, mark: "01" },
     { title: "열 걸음", description: "성경 10절을 따라 썼어요", unlocked: completedVerses >= 10, mark: "10" },
@@ -538,7 +618,7 @@ export function BibleTypingApp() {
   ];
 
   return (
-    <div className={`app-frame app-frame--${view} ${view === "practice" ? "app-frame--practice" : ""}`}>
+    <div className={`app-frame app-frame--${view} ${view === "practice" ? "app-frame--practice" : ""} visual-theme--${visualTheme}`}>
       <aside className="sidebar">
         <button className="brand" onClick={() => setView("home")} aria-label="말씀타자 홈">
           <span className="brand__wordmark">말씀타자</span>
@@ -558,6 +638,7 @@ export function BibleTypingApp() {
         </nav>
 
         <div className="sidebar-footer">
+          <ThemeFamilyPicker value={visualTheme} onChange={setVisualTheme} />
           <button
             className="theme-switch"
             onClick={() => setTheme((value) => value === "light" ? "dark" : "light")}
@@ -571,6 +652,59 @@ export function BibleTypingApp() {
       </aside>
 
       <div className="workspace">
+        {visualTheme === "type-console" && view !== "practice" && (
+          <header className="console-topbar">
+            <button className="console-wordmark" onClick={() => setView("home")} aria-label="말씀타자 홈">말씀타자</button>
+            <nav className="console-topbar__nav" aria-label="활자 콘솔 주요 메뉴">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  className={view === item.id ? "is-active" : ""}
+                  onClick={() => setView(item.id)}
+                  aria-current={view === item.id ? "page" : undefined}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+            <div className="console-topbar__meta">
+              <span>{formatToday()}</span>
+              <ThemeFamilyPicker value={visualTheme} onChange={setVisualTheme} compact />
+              <button
+                className="console-mode-switch"
+                onClick={() => setTheme((value) => value === "light" ? "dark" : "light")}
+                aria-label={theme === "light" ? "다크 모드로 전환" : "라이트 모드로 전환"}
+              >
+                {theme === "light" ? "밝게" : "어둡게"}
+                {theme === "light" ? <SunIcon size={19} aria-hidden="true" /> : <MoonIcon size={19} aria-hidden="true" />}
+              </button>
+            </div>
+            <button
+              className="console-menu-button"
+              onClick={() => setMobileMenuOpen((value) => !value)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
+            >
+              {mobileMenuOpen ? <XIcon size={28} aria-hidden="true" /> : <ListIcon size={29} aria-hidden="true" />}
+            </button>
+            {mobileMenuOpen && (
+              <div className="console-mobile-menu">
+                <nav aria-label="활자 콘솔 모바일 메뉴">
+                  {navItems.map((item) => (
+                    <button key={item.id} className={view === item.id ? "is-active" : ""} onClick={() => { setView(item.id); setMobileMenuOpen(false); }}>
+                      {item.label}
+                    </button>
+                  ))}
+                </nav>
+                <ThemeFamilyPicker value={visualTheme} onChange={(value) => { setVisualTheme(value); setMobileMenuOpen(false); }} compact />
+                <button className="console-mobile-mode" onClick={() => { setTheme((value) => value === "light" ? "dark" : "light"); setMobileMenuOpen(false); }}>
+                  {theme === "light" ? <MoonIcon size={18} aria-hidden="true" /> : <SunIcon size={18} aria-hidden="true" />}
+                  {theme === "light" ? "다크 모드" : "라이트 모드"}
+                </button>
+              </div>
+            )}
+          </header>
+        )}
         <header className="mobile-header">
           <div className="mobile-header__top">
             <button className="brand" onClick={() => setView("home")} aria-label="말씀타자 홈">
@@ -599,6 +733,7 @@ export function BibleTypingApp() {
           </nav>
           {mobileMenuOpen && (
             <div className="mobile-menu-panel">
+              <ThemeFamilyPicker value={visualTheme} onChange={(value) => { setVisualTheme(value); setMobileMenuOpen(false); }} compact />
               <button onClick={() => { setTheme((value) => value === "light" ? "dark" : "light"); setMobileMenuOpen(false); }}>
                 {theme === "light" ? <MoonIcon size={18} aria-hidden="true" /> : <SunIcon size={18} aria-hidden="true" />}
                 {theme === "light" ? "다크 모드로 보기" : "라이트 모드로 보기"}
@@ -611,42 +746,82 @@ export function BibleTypingApp() {
         <main className="main-content">
           {view === "home" && (
             <div className="page page--home">
-              <section className="home-editorial">
-                <p className="home-date">{formatToday()}</p>
+              {visualTheme === "type-console" ? (
+                <section className="console-home">
+                  <aside className="console-home__index" aria-label={`오늘 ${todayCompleted}/${progress.dailyGoal}절`}>
+                    <div>
+                      <strong>{`${todayCompleted}`.padStart(2, "0")}</strong>
+                      <span>/ {progress.dailyGoal} 오늘</span>
+                    </div>
+                    <ArrowRightIcon size={48} weight="light" aria-hidden="true" />
+                  </aside>
+                  <div className="console-home__body">
+                    <div className="console-home__headline">
+                      <h1><span>읽고,</span><span>따라 쓰며,</span></h1>
+                    </div>
+                    <div className="console-home__band">마음에 오래.</div>
+                    <div className="console-home__lower">
+                      <article className="console-home__verse">
+                        {homeUnit && <h2>{referenceFor(homeUnit, homeBook)}</h2>}
+                        {homeUnit && <p>{homeUnit.t}</p>}
+                      </article>
+                      <section className="console-home__commands" aria-label="연습 명령">
+                        <button onClick={() => beginPractice(progress.currentIndex)} aria-keyshortcuts="Enter">
+                          <small>[ ENTER ]</small>
+                          <strong>이어서 연습</strong>
+                        </button>
+                        <button className="console-random-command" onClick={startRandomPractice} aria-keyshortcuts="R">
+                          <b>R</b> 무작위 한 절
+                        </button>
+                      </section>
+                    </div>
+                    <section className="console-home__ticker" aria-label="연습 요약">
+                      <span>진도 <strong>{formatNumber(completedVerses)}</strong>/{formatNumber(bible.totalVerses)}절</span>
+                      <i aria-hidden="true" />
+                      <span>정확도 <strong>{averageAccuracy ? averageAccuracy.toFixed(1) : "—"}</strong>{averageAccuracy ? "%" : ""}</span>
+                      <i aria-hidden="true" />
+                      <span>최고 <strong>{progress.bestCpm || "—"}</strong>{progress.bestCpm ? "타/분" : ""}</span>
+                    </section>
+                  </div>
+                </section>
+              ) : (
+                <section className="home-editorial">
+                  <p className="home-date">{formatToday()}</p>
 
-                <div className="home-feature">
-                  <div className="home-feature__copy">
-                    <span className="home-kicker">오늘의 말씀</span>
-                    <h1>읽고, 따라 쓰며,<br />마음에 오래.</h1>
-                    {homeUnit && <p className="home-reference">{referenceFor(homeUnit, homeBook)}</p>}
-                    {homeUnit && <p className="home-verse-preview">{homeUnit.t}</p>}
-                    <span className="home-accent-line" aria-hidden="true" />
-                    <div className="home-actions">
-                      <button className="home-primary" onClick={() => beginPractice(progress.currentIndex)}>
-                        이어서 연습하기 <ArrowRightIcon size={21} weight="regular" aria-hidden="true" />
-                      </button>
-                      <button className="home-random" onClick={startRandomPractice}>한 절 무작위</button>
+                  <div className="home-feature">
+                    <div className="home-feature__copy">
+                      <span className="home-kicker">오늘의 말씀</span>
+                      <h1>읽고, 따라 쓰며,<br />마음에 오래.</h1>
+                      {homeUnit && <p className="home-reference">{referenceFor(homeUnit, homeBook)}</p>}
+                      {homeUnit && <p className="home-verse-preview">{homeUnit.t}</p>}
+                      <span className="home-accent-line" aria-hidden="true" />
+                      <div className="home-actions">
+                        <button className="home-primary" onClick={() => beginPractice(progress.currentIndex)}>
+                          이어서 연습하기 <ArrowRightIcon size={21} weight="regular" aria-hidden="true" />
+                        </button>
+                        <button className="home-random" onClick={startRandomPractice}>한 절 무작위</button>
+                      </div>
+                    </div>
+
+                    <div className="home-goal" aria-label={`오늘 ${todayCompleted}/${progress.dailyGoal}절`}>
+                      <p>오늘 <strong>{todayCompleted}/{progress.dailyGoal}</strong></p>
+                      <ol>
+                        {Array.from({ length: progress.dailyGoal }, (_, index) => (
+                          <li className={index < todayCompleted ? "is-complete" : ""} key={index + 1}>
+                            <span>{index + 1}</span><i />
+                          </li>
+                        ))}
+                      </ol>
                     </div>
                   </div>
 
-                  <div className="home-goal" aria-label={`오늘 ${todayCompleted}/${progress.dailyGoal}절`}>
-                    <p>오늘 <strong>{todayCompleted}/{progress.dailyGoal}</strong></p>
-                    <ol>
-                      {Array.from({ length: progress.dailyGoal }, (_, index) => (
-                        <li className={index < todayCompleted ? "is-complete" : ""} key={index + 1}>
-                          <span>{index + 1}</span><i />
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                </div>
-
-                <section className="home-summary" aria-label="연습 요약">
-                  <div><span>전체 진도</span><strong>{formatNumber(completedVerses)}<small>/{formatNumber(bible.totalVerses)}절</small></strong></div>
-                  <div><span>평균 정확도</span><strong>{averageAccuracy ? averageAccuracy.toFixed(1) : "—"}<small>{averageAccuracy ? "%" : ""}</small></strong></div>
-                  <div><span>최고 타수</span><strong>{progress.bestCpm || "—"}<small>{progress.bestCpm ? "타/분" : ""}</small></strong></div>
+                  <section className="home-summary" aria-label="연습 요약">
+                    <div><span>전체 진도</span><strong>{formatNumber(completedVerses)}<small>/{formatNumber(bible.totalVerses)}절</small></strong></div>
+                    <div><span>평균 정확도</span><strong>{averageAccuracy ? averageAccuracy.toFixed(1) : "—"}<small>{averageAccuracy ? "%" : ""}</small></strong></div>
+                    <div><span>최고 타수</span><strong>{progress.bestCpm || "—"}<small>{progress.bestCpm ? "타/분" : ""}</small></strong></div>
+                  </section>
                 </section>
-              </section>
+              )}
             </div>
           )}
 
@@ -683,6 +858,105 @@ export function BibleTypingApp() {
 
           {view === "practice" && currentUnit && (
             <div className="page page--practice">
+              {visualTheme === "type-console" ? (
+                <section className={`console-practice ${result ? "is-complete" : ""}`}>
+                  <header className="console-practice__header">
+                    <button onClick={() => setView("home")} aria-label="연습을 닫고 홈으로" aria-keyshortcuts="Escape">[ ESC ] 나가기</button>
+                    <h1>{referenceFor(currentUnit, currentBook)}</h1>
+                    <p>오늘 <strong>{todayCompleted}/{progress.dailyGoal}</strong>절</p>
+                    <p>연속 <strong>{streak}</strong>일</p>
+                  </header>
+
+                  {!result ? (
+                    <>
+                      <ol className="console-segments" aria-label={`현재 ${activeSegment}구간, 전체 10구간`}>
+                        {Array.from({ length: 10 }, (_, index) => {
+                          const segment = index + 1;
+                          return (
+                            <li className={segment === activeSegment ? "is-active" : segment < activeSegment ? "is-complete" : ""} key={segment}>
+                              <span>{`${segment}`.padStart(2, "0")}</span>
+                              {segment === activeSegment && <strong>{segment}구간</strong>}
+                            </li>
+                          );
+                        })}
+                      </ol>
+
+                      <div className="console-stage-grid">
+                        <div className="console-word-stack" aria-label={`따라 쓸 구절: ${currentUnit.t}`} aria-live="polite">
+                          {visibleConsoleWords.map((word, queueIndex) => {
+                            const cursorOffset = Math.max(0, typed.length - word.start);
+                            return queueIndex === 0 ? (
+                              <div className="console-current-word" key={`${word.start}-${word.text}`}>
+                                {Array.from(word.text).map((character, offset) => {
+                                  const absoluteIndex = word.start + offset;
+                                  const state = absoluteIndex < typed.length
+                                    ? typed[absoluteIndex] === character ? "is-correct" : "is-wrong"
+                                    : "is-upcoming";
+                                  return (
+                                    <span className={`${state} ${offset === cursorOffset ? "is-input-position" : ""}`} key={`${absoluteIndex}-${character}`}>
+                                      {character}
+                                    </span>
+                                  );
+                                })}
+                                {cursorOffset >= word.text.length && <span className="console-word-cursor" aria-hidden="true" />}
+                              </div>
+                            ) : (
+                              <div className={`console-next-word console-next-word--${queueIndex}`} key={`${word.start}-${word.text}`}>{word.text}</div>
+                            );
+                          })}
+                        </div>
+
+                        <aside className="console-live-stats" aria-label="현재 타자 기록" aria-live="polite">
+                          <div><span>콤보</span><strong>{currentCombo}</strong></div>
+                          <div><span>타수</span><strong>{liveCpm || 0}</strong></div>
+                          <div><span>정확도</span><strong>{keystrokes ? liveAccuracy.toFixed(0) : 100}<small>%</small></strong></div>
+                        </aside>
+                      </div>
+
+                      <div className="console-input-bar">
+                        <label className="sr-only" htmlFor="typing-input">말씀을 그대로 입력하세요</label>
+                        <textarea
+                          ref={inputRef}
+                          id="typing-input"
+                          value={typed}
+                          onChange={handleInput}
+                          onCompositionStart={() => {
+                            isComposingRef.current = true;
+                            compositionBaseRef.current = typed;
+                          }}
+                          onCompositionEnd={(event) => {
+                            isComposingRef.current = false;
+                            applyTypedValue(event.currentTarget.value, compositionBaseRef.current);
+                          }}
+                          onPaste={(event) => event.preventDefault()}
+                          placeholder="말씀을 입력하세요"
+                          autoCapitalize="off"
+                          autoCorrect="off"
+                          autoComplete="off"
+                          spellCheck={false}
+                          rows={1}
+                        />
+                        <button onClick={goRandom}>다른 구절</button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="console-result" aria-live="polite">
+                      <span>완주 / {referenceFor(currentUnit, currentBook)}</span>
+                      <h2>{result.isNew ? "새로운 진도가 기록됐습니다." : "다시 쓴 구절도 좋은 연습이에요."}</h2>
+                      <div className="console-result__stats">
+                        <div><strong>{result.cpm}</strong><span>타/분</span></div>
+                        <div><strong>{result.accuracy.toFixed(1)}</strong><span>정확도 %</span></div>
+                        <div><strong>{result.durationSeconds.toFixed(1)}</strong><span>걸린 시간</span></div>
+                      </div>
+                      <p>“{currentUnit.t}”</p>
+                      <div className="console-result__actions">
+                        <button onClick={goToNext}>[ ENTER ] 다음 구절</button>
+                        <button onClick={resetPractice}>한 번 더</button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              ) : (
               <section className={`typing-stage ${result ? "is-complete" : ""}`}>
                 <header className="practice-header">
                   <button className="practice-back" onClick={() => setView("home")} aria-label="연습을 닫고 홈으로">
@@ -774,6 +1048,7 @@ export function BibleTypingApp() {
                   </div>
                 )}
               </section>
+              )}
             </div>
           )}
 
