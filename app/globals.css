@@ -1129,10 +1129,6 @@ button:disabled {
 }
 
 .verse-display span.is-correct {
-  color: #fffdf7;
-}
-
-.verse-display span.is-active-segment {
   color: var(--lime);
   text-shadow: 0 0 18px rgba(220, 237, 121, 0.22);
 }

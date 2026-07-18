@@ -724,14 +724,9 @@ export function BibleTypingApp() {
                     </div>
                     <div className="verse-display" aria-label={`따라 쓸 구절: ${currentUnit.t}`}>
                       {Array.from(currentUnit.t).map((character, index) => {
-                        const characterSegment = Math.min(10, Math.floor((index / currentUnit.t.length) * 10) + 1);
                         const state = index < typed.length
-                          ? typed[index] === character
-                            ? characterSegment === activeSegment ? "is-correct is-active-segment" : "is-correct"
-                            : "is-wrong"
-                          : index === typed.length
-                            ? "is-current is-active-segment"
-                            : characterSegment === activeSegment ? "is-active-segment" : "";
+                          ? typed[index] === character ? "is-correct" : "is-wrong"
+                          : index === typed.length ? "is-current" : "";
                         return <span className={state} key={`${index}-${character}`}>{character}</span>;
                       })}
                     </div>
