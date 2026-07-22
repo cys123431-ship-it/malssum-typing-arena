@@ -6,15 +6,25 @@ const appSourceUrl = new URL("../app/BibleTypingApp.tsx", import.meta.url);
 const cssSourceUrl = new URL("../app/globals.css", import.meta.url);
 const pageSourceUrl = new URL("../app/page.tsx", import.meta.url);
 const nextConfigSourceUrl = new URL("../next.config.ts", import.meta.url);
+const schemaSourceUrl = new URL("../db/schema.ts", import.meta.url);
+const playerRouteSourceUrl = new URL("../app/api/player/route.ts", import.meta.url);
+const progressRouteSourceUrl = new URL("../app/api/progress/route.ts", import.meta.url);
+const leaderboardRouteSourceUrl = new URL("../app/api/leaderboard/route.ts", import.meta.url);
+const migrationSourceUrl = new URL("../drizzle/0001_military_terror.sql", import.meta.url);
 
 async function readSources() {
-  const [app, css, page, nextConfig] = await Promise.all([
+  const [app, css, page, nextConfig, schema, playerRoute, progressRoute, leaderboardRoute, migration] = await Promise.all([
     readFile(appSourceUrl, "utf8"),
     readFile(cssSourceUrl, "utf8"),
     readFile(pageSourceUrl, "utf8"),
     readFile(nextConfigSourceUrl, "utf8"),
+    readFile(schemaSourceUrl, "utf8"),
+    readFile(playerRouteSourceUrl, "utf8"),
+    readFile(progressRouteSourceUrl, "utf8"),
+    readFile(leaderboardRouteSourceUrl, "utf8"),
+    readFile(migrationSourceUrl, "utf8"),
   ]);
-  return { app, css, page, nextConfig };
+  return { app, css, page, nextConfig, schema, playerRoute, progressRoute, leaderboardRoute, migration };
 }
 
 test("serves game artwork without the unavailable production image optimizer", async () => {
@@ -106,8 +116,31 @@ test("keeps battle typing connected to the existing accuracy and completion logi
   assert.match(app, /setTyped\(nextValue\)/);
   assert.match(app, /currentCombo = typed\[index\] === currentUnit\.t\[index\] \? currentCombo \+ 1 : 0/);
   assert.match(app, /const cpm = Math\.round\(\(correctKeystrokes \/ durationSeconds\) \* 60\)/);
-  assert.match(app, /finishPractice\(nextKeystrokes, nextErrors, start\)/);
+  assert.match(app, /finishPractice\(nextKeystrokes, nextErrors, start, finalCombo\)/);
   assert.doesNotMatch(app, /event\.key === "Tab"/);
+});
+
+test("adds unique player identities and server-backed ranked scoring", async () => {
+  const { app, css, schema, playerRoute, progressRoute, leaderboardRoute, migration } = await readSources();
+
+  assert.match(schema, /sqliteTable\("players"/);
+  assert.match(schema, /sqliteTable\("ranked_sessions"/);
+  assert.match(migration, /CREATE TABLE `players`/);
+  assert.match(migration, /CREATE TABLE `ranked_sessions`/);
+  assert.match(playerRoute, /status: duplicate \? 409 : 500/);
+  assert.match(playerRoute, /createPlayerToken/);
+  assert.match(progressRoute, /calculateSessionScore/);
+  assert.match(progressRoute, /mode === "battle"/);
+  assert.match(progressRoute, /db\.insert\(rankedSessions\)/);
+  assert.match(leaderboardRoute, /\.limit\(50\)/);
+  assert.match(leaderboardRoute, /players\.practiceScore/);
+  assert.match(leaderboardRoute, /players\.battleScore/);
+  assert.match(app, /PLAYER_SESSION_STORAGE_KEY/);
+  assert.match(app, /RECORD MODE \/ LIVE RANKING/);
+  assert.match(app, /기록 모드 ON/);
+  assert.match(app, /랭킹 기록 점수/);
+  assert.match(css, /\.leaderboard-table/);
+  assert.match(css, /\.ranking-account/);
 });
 
 test("adds a persistent six-fighter chooser before Bible word battle", async () => {

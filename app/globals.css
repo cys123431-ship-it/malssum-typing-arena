@@ -63,6 +63,7 @@ body {
 }
 
 button,
+input,
 textarea {
   color: inherit;
   font: inherit;
@@ -74,9 +75,581 @@ button {
 }
 
 button:focus-visible,
+input:focus-visible,
 textarea:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--lime) 85%, white);
   outline-offset: 3px;
+}
+
+/* Player identity, record mode, and public ranking */
+.player-status {
+  display: flex;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+}
+
+.player-status span {
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.player-status strong {
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.player-status.is-recording {
+  border-color: color-mix(in srgb, var(--lime) 62%, var(--line-strong));
+}
+
+.player-status.is-recording span {
+  color: var(--green);
+}
+
+.console-player-status {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--console-line, var(--line));
+  border-radius: 0;
+  background: transparent;
+  color: var(--console-ink, var(--ink));
+  font-family: var(--console-mono, var(--sans));
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.console-player-status.is-recording::before {
+  content: "●";
+  margin-right: 7px;
+  color: var(--console-accent, var(--lime));
+}
+
+.record-mode-score {
+  display: flex;
+  width: min(100%, 620px);
+  min-height: 62px;
+  margin: 14px auto 0;
+  padding: 10px 12px 10px 16px;
+  border: 1px solid var(--line-strong);
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  text-align: left;
+}
+
+.record-mode-score > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.record-mode-score span {
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.record-mode-score strong {
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-mode-score.is-scored strong {
+  color: var(--green);
+}
+
+.record-mode-score button {
+  min-width: 100px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.battle-victory .record-mode-score,
+.console-result .record-mode-score {
+  border-color: var(--battle-line, var(--console-line, var(--line-strong)));
+  background: transparent;
+  color: inherit;
+}
+
+.battle-victory .record-mode-score span,
+.console-result .record-mode-score span {
+  color: inherit;
+  opacity: 0.64;
+}
+
+.battle-victory .record-mode-score.is-scored strong,
+.console-result .record-mode-score.is-scored strong {
+  color: var(--battle-accent, var(--console-accent, var(--lime)));
+}
+
+.battle-victory .record-mode-score button,
+.console-result .record-mode-score button {
+  border-color: currentColor;
+  color: inherit;
+}
+
+.page--ranking {
+  display: flex;
+  max-width: 1480px;
+  flex-direction: column;
+}
+
+.ranking-heading {
+  align-items: end;
+}
+
+.ranking-heading h1 {
+  font-size: clamp(40px, 5.8vw, 86px);
+  line-height: 0.98;
+  letter-spacing: -0.075em;
+}
+
+.ranking-account {
+  position: relative;
+  display: grid;
+  margin-top: 28px;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  grid-template-columns: minmax(260px, 0.9fr) minmax(420px, 1.4fr);
+}
+
+.ranking-account__identity {
+  min-height: 220px;
+  padding: 30px;
+  border-right: 1px solid var(--line-strong);
+}
+
+.ranking-account__identity > span {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.ranking-account__identity h2 {
+  margin: 18px 0 12px;
+  font-size: clamp(30px, 4vw, 58px);
+  line-height: 1.05;
+  letter-spacing: -0.06em;
+}
+
+.ranking-account__identity p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.ranking-account__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ranking-account__metrics div {
+  display: flex;
+  min-width: 0;
+  padding: 26px 18px;
+  border-right: 1px solid var(--line);
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ranking-account__metrics div:last-child {
+  border-right: 0;
+}
+
+.ranking-account__metrics span {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.ranking-account__metrics strong {
+  margin-top: 12px;
+  overflow: hidden;
+  font-size: clamp(24px, 3vw, 46px);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.06em;
+  text-overflow: ellipsis;
+}
+
+.ranking-account__form {
+  display: flex;
+  min-height: 220px;
+  padding: 30px;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ranking-account__form label {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.ranking-account__form > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+}
+
+.ranking-account__form input {
+  min-width: 0;
+  height: 58px;
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-right: 0;
+  border-radius: 0;
+  outline: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.ranking-account__form button {
+  min-height: 58px;
+  padding: 0 14px;
+  border-radius: 0;
+  background: var(--green-deep);
+  color: #f7f4e9;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ranking-account__form small {
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.ranking-account__message {
+  position: absolute;
+  right: 30px;
+  bottom: 12px;
+  margin: 0;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.leaderboard-section {
+  margin-top: 48px;
+}
+
+.leaderboard-section__header {
+  display: flex;
+  margin-bottom: 16px;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.leaderboard-section__header > div:first-child > span {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.leaderboard-section__header h2 {
+  margin: 5px 0 0;
+  font-size: clamp(28px, 3vw, 44px);
+  letter-spacing: -0.055em;
+}
+
+.ranking-tabs {
+  display: flex;
+  border: 1px solid var(--line-strong);
+}
+
+.ranking-tabs button {
+  min-width: 94px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-right: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.ranking-tabs button:last-child {
+  border-right: 0;
+}
+
+.ranking-tabs button.is-active {
+  background: var(--green-deep);
+  color: #f7f4e9;
+}
+
+.leaderboard-table {
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.leaderboard-table__head,
+.leaderboard-table article {
+  display: grid;
+  grid-template-columns: 72px minmax(150px, 1.35fr) minmax(120px, 1fr) minmax(100px, 0.75fr) minmax(90px, 0.7fr) minmax(70px, 0.55fr);
+  align-items: center;
+}
+
+.leaderboard-table__head {
+  min-height: 40px;
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+}
+
+.leaderboard-table__head span,
+.leaderboard-table article > * {
+  padding: 0 14px;
+}
+
+.leaderboard-table article {
+  min-height: 68px;
+  border-top: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard-table article.is-me {
+  box-shadow: inset 5px 0 0 var(--lime);
+  background: color-mix(in srgb, var(--lime) 13%, transparent);
+}
+
+.leaderboard-table article > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.leaderboard-table article > div strong {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-table article small {
+  margin-left: 4px;
+  color: var(--ink-soft);
+  font-size: 8px;
+  font-style: normal;
+}
+
+.leaderboard-table article > div small {
+  margin: 3px 0 0;
+  color: var(--green);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.leaderboard-rank {
+  font-size: 22px;
+  letter-spacing: -0.05em;
+}
+
+.leaderboard-empty {
+  display: grid;
+  min-height: 140px;
+  place-items: center;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-align: center;
+}
+
+.score-rules {
+  display: grid;
+  min-height: 82px;
+  margin: 34px 0 20px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  grid-template-columns: 100px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+}
+
+.score-rules > span {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.score-rules p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.score-rules strong {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.visual-theme--type-console .page--ranking {
+  --ink: var(--console-ink);
+  --ink-soft: var(--console-muted);
+  --line: var(--console-line);
+  --line-strong: var(--console-line);
+  --green: var(--console-accent);
+  --green-deep: var(--console-dark);
+  --surface: var(--console-paper);
+}
+
+.visual-theme--type-console .ranking-account,
+.visual-theme--type-console .ranking-tabs,
+.visual-theme--type-console .ranking-account__form input,
+.visual-theme--type-console .record-mode-score {
+  border-radius: 0;
+}
+
+.visual-theme--type-console .ranking-account__form button,
+.visual-theme--type-console .ranking-tabs button.is-active {
+  background: var(--console-accent);
+  color: #071e19;
+}
+
+@media (max-width: 1100px) {
+  .console-player-status {
+    display: none;
+  }
+
+  .ranking-account {
+    grid-template-columns: 1fr;
+  }
+
+  .ranking-account__identity {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .ranking-account__form {
+    min-height: 190px;
+  }
+}
+
+@media (max-width: 820px) {
+  .ranking-heading {
+    align-items: start;
+  }
+
+  .ranking-heading h1 {
+    font-size: clamp(38px, 13vw, 62px);
+  }
+
+  .ranking-account {
+    margin-top: 12px;
+  }
+
+  .ranking-account__identity,
+  .ranking-account__form {
+    padding: 22px 18px;
+  }
+
+  .ranking-account__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ranking-account__metrics div {
+    min-height: 104px;
+    padding: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .ranking-account__metrics div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .ranking-account__metrics div:nth-child(n + 3) {
+    border-bottom: 0;
+  }
+
+  .ranking-account__message {
+    position: static;
+    grid-column: 1 / -1;
+    padding: 0 18px 18px;
+  }
+
+  .leaderboard-section {
+    margin-top: 34px;
+  }
+
+  .leaderboard-section__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ranking-tabs button {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .leaderboard-table__head,
+  .leaderboard-table article {
+    grid-template-columns: 52px minmax(105px, 1fr) minmax(90px, 0.8fr) 70px;
+  }
+
+  .leaderboard-table__head span:nth-child(4),
+  .leaderboard-table__head span:nth-child(5),
+  .leaderboard-table article > *:nth-child(4),
+  .leaderboard-table article > *:nth-child(5) {
+    display: none;
+  }
+
+  .score-rules {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .score-rules strong {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 420px) {
+  .ranking-account__form > div {
+    grid-template-columns: 1fr;
+  }
+
+  .ranking-account__form input {
+    border-right: 1px solid var(--line-strong);
+    border-bottom: 0;
+  }
+
+  .record-mode-score {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .record-mode-score button {
+    width: 100%;
+  }
 }
 
 button:disabled {

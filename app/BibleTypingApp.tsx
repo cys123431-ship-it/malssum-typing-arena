@@ -3,6 +3,7 @@
 import {
   type ChangeEvent,
   type CSSProperties,
+  type FormEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -19,9 +20,10 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 
-type View = "home" | "library" | "battle-select" | "battle-map" | "practice" | "progress";
+type View = "home" | "library" | "battle-select" | "battle-map" | "practice" | "progress" | "ranking";
 type VisualTheme = "classic" | "type-console";
 type PracticeMode = "standard" | "battle";
+type RankingScope = "overall" | "standard" | "battle";
 type BattleFighterId = "seoha" | "mira" | "yuna" | "riel" | "hana" | "arin";
 
 type BattleFighter = {
@@ -124,6 +126,37 @@ type SessionResult = {
   durationSeconds: number;
   completedAt: string;
   isNew?: boolean;
+  mode?: PracticeMode;
+  score?: number;
+  scoreError?: boolean;
+};
+
+type PlayerSession = {
+  id: string;
+  token: string;
+};
+
+type PlayerSummary = {
+  id: string;
+  totalScore: number;
+  practiceScore: number;
+  battleScore: number;
+  totalSessions: number;
+  bestScore: number;
+  bestCpm: number;
+  bestAccuracy: number;
+  rank: number;
+};
+
+type LeaderboardEntry = {
+  id: string;
+  score: number;
+  totalScore: number;
+  totalSessions: number;
+  bestScore: number;
+  bestCpm: number;
+  bestAccuracy: number;
+  rank: number;
 };
 
 type ProgressState = {
@@ -149,10 +182,30 @@ function Image(props: ImageProps) {
   return <NextImage {...props} unoptimized />;
 }
 
+function playerRequestHeaders(session: PlayerSession | null): Record<string, string> {
+  return session
+    ? { "x-player-id": session.id, "x-player-token": session.token }
+    : {};
+}
+
+function readPlayerSession(): PlayerSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(PLAYER_SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<PlayerSession>;
+    return value.id && value.token ? { id: value.id, token: value.token } : null;
+  } catch {
+    window.localStorage.removeItem(PLAYER_SESSION_STORAGE_KEY);
+    return null;
+  }
+}
+
 const STORAGE_KEY = "bible-typing-progress-v1";
 const VISUAL_THEME_STORAGE_KEY = "bible-typing-visual-theme";
 const BATTLE_FIGHTER_STORAGE_KEY = "bible-typing-battle-fighter";
 const BATTLE_CAMPAIGN_STORAGE_KEY = "bible-typing-battle-campaign-v1";
+const PLAYER_SESSION_STORAGE_KEY = "bible-typing-player-session-v1";
 const BATTLE_FIGHTERS: BattleFighter[] = [
   {
     id: "seoha",
@@ -535,6 +588,14 @@ export function BibleTypingApp() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState("기기 저장");
   const [loadingError, setLoadingError] = useState("");
+  const [playerSession, setPlayerSession] = useState<PlayerSession | null>(readPlayerSession);
+  const [playerSummary, setPlayerSummary] = useState<PlayerSummary | null>(null);
+  const [playerIdDraft, setPlayerIdDraft] = useState("");
+  const [accountMessage, setAccountMessage] = useState("");
+  const [accountBusy, setAccountBusy] = useState(false);
+  const [rankingScope, setRankingScope] = useState<RankingScope>("overall");
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardBusy, setLeaderboardBusy] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const startedAtRef = useRef<number | null>(null);
@@ -599,19 +660,8 @@ export function BibleTypingApp() {
           window.localStorage.removeItem(STORAGE_KEY);
         }
 
-        let remote: Partial<ProgressState> | null = null;
-        try {
-          const progressResponse = await fetch("/api/progress", { cache: "no-store" });
-          if (progressResponse.ok) {
-            remote = await progressResponse.json() as Partial<ProgressState>;
-            setSyncStatus("동기화됨");
-          }
-        } catch {
-          setSyncStatus("기기 저장");
-        }
-
         if (!cancelled) {
-          const nextProgress = mergeProgress(local, remote);
+          const nextProgress = local;
           setBible(bibleData);
           setProgress(nextProgress);
           setCurrentIndex(Math.min(nextProgress.currentIndex, bibleData.units.length - 1));
@@ -624,6 +674,60 @@ export function BibleTypingApp() {
     void load();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!playerSession) return;
+
+    let cancelled = false;
+    const headers = playerRequestHeaders(playerSession);
+    Promise.all([
+      fetch("/api/player", { headers, cache: "no-store" }),
+      fetch("/api/progress", { headers, cache: "no-store" }),
+    ]).then(async ([playerResponse, progressResponse]) => {
+      if (playerResponse.status === 401 || progressResponse.status === 401) {
+        window.localStorage.removeItem(PLAYER_SESSION_STORAGE_KEY);
+        if (!cancelled) {
+          setPlayerSession(null);
+          setPlayerSummary(null);
+          setSyncStatus("기기 저장");
+          setAccountMessage("이 기기의 선수 인증이 만료되어 기록 모드가 해제됐습니다.");
+        }
+        return;
+      }
+      if (playerResponse.ok) {
+        const payload = await playerResponse.json() as { player: PlayerSummary };
+        if (!cancelled) setPlayerSummary(payload.player);
+      }
+      if (progressResponse.ok) {
+        const remote = await progressResponse.json() as Partial<ProgressState>;
+        if (!cancelled) {
+          setProgress((local) => mergeProgress(local, remote));
+          setSyncStatus("기록 모드");
+        }
+      }
+    }).catch(() => {
+      if (!cancelled) setSyncStatus("기기 저장");
+    });
+
+    return () => { cancelled = true; };
+  }, [playerSession]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/leaderboard?scope=${rankingScope}`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("랭킹을 불러오지 못했습니다.");
+        const payload = await response.json() as { entries: LeaderboardEntry[] };
+        if (!cancelled) setLeaderboard(payload.entries);
+      })
+      .catch(() => {
+        if (!cancelled) setLeaderboard([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLeaderboardBusy(false);
+      });
+    return () => { cancelled = true; };
+  }, [rankingScope, playerSummary?.totalScore]);
 
   useEffect(() => {
     if (!bible) return;
@@ -792,7 +896,36 @@ export function BibleTypingApp() {
     beginPractice(firstIncomplete ?? indices[0] ?? 0);
   }, [beginPractice, bible, completedSet, indicesByBook]);
 
-  const finishPractice = useCallback((finalKeystrokes: number, finalErrors: number, start: number) => {
+  async function createPlayer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (accountBusy) return;
+    setAccountBusy(true);
+    setAccountMessage("");
+    try {
+      const response = await fetch("/api/player", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: playerIdDraft }),
+      });
+      const payload = await response.json() as { player?: PlayerSummary; token?: string; error?: string };
+      if (!response.ok || !payload.player || !payload.token) {
+        throw new Error(payload.error ?? "아이디를 만들지 못했습니다.");
+      }
+      const session = { id: payload.player.id, token: payload.token };
+      window.localStorage.setItem(PLAYER_SESSION_STORAGE_KEY, JSON.stringify(session));
+      setPlayerSession(session);
+      setPlayerSummary(payload.player);
+      setPlayerIdDraft("");
+      setSyncStatus("기록 모드");
+      setAccountMessage(`${payload.player.id} 아이디로 기록 모드가 시작됐습니다.`);
+    } catch (error) {
+      setAccountMessage(error instanceof Error ? error.message : "아이디를 만들지 못했습니다.");
+    } finally {
+      setAccountBusy(false);
+    }
+  }
+
+  const finishPractice = useCallback((finalKeystrokes: number, finalErrors: number, start: number, finalCombo: number) => {
     if (!bible || !currentUnit || result || completionLockRef.current) return;
     completionLockRef.current = true;
     const durationSeconds = Math.max(0.1, (Date.now() - start) / 1000);
@@ -810,6 +943,7 @@ export function BibleTypingApp() {
       durationSeconds,
       completedAt,
       isNew,
+      mode: practiceMode,
     };
 
     const shouldShowResult = !sessionResultShownRef.current;
@@ -846,29 +980,50 @@ export function BibleTypingApp() {
       };
     });
 
-    setSyncStatus("저장 중");
-    void fetch("/api/progress", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        verseId: currentUnit.id,
-        bookCode: currentUnit.b,
-        weight: currentUnit.w,
-        cpm,
-        accuracy,
-        durationSeconds,
-        typedChars: finalKeystrokes,
-        correctChars: Math.max(0, finalKeystrokes - finalErrors),
-        currentIndex: nextIndex,
-        localDate: localDateKey(),
-      }),
-    }).then((response) => {
-      setSyncStatus(response.ok ? "동기화됨" : "기기 저장");
-    }).catch(() => setSyncStatus("기기 저장"));
+    if (playerSession) {
+      setSyncStatus("점수 계산 중");
+      void fetch("/api/progress", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...playerRequestHeaders(playerSession),
+        },
+        body: JSON.stringify({
+          verseId: currentUnit.id,
+          bookCode: currentUnit.b,
+          weight: currentUnit.w,
+          cpm,
+          accuracy,
+          durationSeconds,
+          typedChars: finalKeystrokes,
+          correctChars: Math.max(0, finalKeystrokes - finalErrors),
+          currentIndex: nextIndex,
+          localDate: localDateKey(),
+          mode: practiceMode,
+          combo: finalCombo,
+          stageId: practiceMode === "battle" ? activeBattleStage.id : undefined,
+        }),
+      }).then(async (response) => {
+        const payload = await response.json() as { score?: number; player?: PlayerSummary };
+        if (!response.ok || payload.score === undefined || !payload.player) {
+          setSyncStatus("기기 저장");
+          setResult((previous) => previous?.completedAt === completedAt ? { ...previous, scoreError: true } : previous);
+          return;
+        }
+        setPlayerSummary(payload.player);
+        setResult((previous) => previous?.completedAt === completedAt ? { ...previous, score: payload.score } : previous);
+        setSyncStatus("기록 모드");
+      }).catch(() => {
+        setSyncStatus("기기 저장");
+        setResult((previous) => previous?.completedAt === completedAt ? { ...previous, scoreError: true } : previous);
+      });
+    } else {
+      setSyncStatus("기기 저장");
+    }
 
     if (navigator.vibrate) navigator.vibrate([25, 35, 25]);
     if (!shouldShowResult) continuePractice(nextIndex);
-  }, [bible, completedSet, continuePractice, currentIndex, currentUnit, result]);
+  }, [activeBattleStage.id, bible, completedSet, continuePractice, currentIndex, currentUnit, playerSession, practiceMode, result]);
 
   useEffect(() => {
     if (!result || practiceMode !== "battle" || battleRewardedRef.current) return;
@@ -949,7 +1104,11 @@ export function BibleTypingApp() {
 
     setTyped(nextValue);
     if (start && nextValue.length === currentUnit.t.length && battlePlayerHpRef.current > 0) {
-      finishPractice(nextKeystrokes, nextErrors, start);
+      let finalCombo = 0;
+      for (let index = 0; index < nextValue.length; index += 1) {
+        finalCombo = nextValue[index] === currentUnit.t[index] ? finalCombo + 1 : 0;
+      }
+      finishPractice(nextKeystrokes, nextErrors, start, finalCombo);
     }
   }, [activeBattleStage, battleDefeated, currentUnit, fighterCampaign.level, fighterCampaign.weaponLevel, finishPractice, practiceMode, result]);
 
@@ -1078,6 +1237,7 @@ export function BibleTypingApp() {
     { id: "home", label: "오늘", short: "오늘" },
     { id: "library", label: "성경 선택", short: "성경" },
     { id: "progress", label: "나의 기록", short: "기록" },
+    { id: "ranking", label: "랭킹", short: "랭킹" },
   ];
 
   return (
@@ -1101,6 +1261,10 @@ export function BibleTypingApp() {
         </nav>
 
         <div className="sidebar-footer">
+          <button className={`player-status ${playerSummary ? "is-recording" : ""}`} onClick={() => setView("ranking")}>
+            <span>{playerSummary ? "기록 모드 ON" : "기록 모드 OFF"}</span>
+            <strong>{playerSummary ? `${playerSummary.id} · #${playerSummary.rank}` : "선수 아이디 만들기"}</strong>
+          </button>
           <ThemeFamilyPicker value={visualTheme} onChange={setVisualTheme} />
           <button
             className="theme-switch"
@@ -1132,6 +1296,9 @@ export function BibleTypingApp() {
             </nav>
             <div className="console-topbar__meta">
               <span>{formatToday()}</span>
+              <button className={`console-player-status ${playerSummary ? "is-recording" : ""}`} onClick={() => setView("ranking")}>
+                {playerSummary ? `${playerSummary.id} #${playerSummary.rank}` : "아이디 만들기"}
+              </button>
               <ThemeFamilyPicker value={visualTheme} onChange={setVisualTheme} compact />
               <button
                 className="console-mode-switch"
@@ -1717,6 +1884,13 @@ export function BibleTypingApp() {
                         <div><strong>{result.cpm}</strong><span>타/분</span></div>
                         <div><strong>{result.accuracy.toFixed(1)}</strong><span>정확도 %</span></div>
                       </div>
+                      <div className={`record-mode-score ${result.score !== undefined ? "is-scored" : ""}`}>
+                        <div>
+                          <span>{playerSession ? "랭킹 기록 점수" : "기록 모드 OFF"}</span>
+                          <strong>{result.score !== undefined ? `+${formatNumber(result.score)}점` : result.scoreError ? "기록 실패 · 다시 완주해 주세요" : playerSession ? "점수 계산 중" : "아이디를 만들면 점수가 기록됩니다"}</strong>
+                        </div>
+                        <button onClick={() => setView("ranking")}>{playerSession ? "랭킹 보기" : "아이디 만들기"}</button>
+                      </div>
                       {battleReward && (
                         <div className="battle-victory__reward">
                           <span>{battleReward.firstClear ? "첫 승리 보상" : "재도전 보상"}</span>
@@ -1824,6 +1998,13 @@ export function BibleTypingApp() {
                         <div><strong>{result.accuracy.toFixed(1)}</strong><span>정확도 %</span></div>
                         <div><strong>{result.durationSeconds.toFixed(1)}</strong><span>걸린 시간</span></div>
                       </div>
+                      <div className={`record-mode-score ${result.score !== undefined ? "is-scored" : ""}`}>
+                        <div>
+                          <span>{playerSession ? "랭킹 기록 점수" : "기록 모드 OFF"}</span>
+                          <strong>{result.score !== undefined ? `+${formatNumber(result.score)}점` : result.scoreError ? "기록 실패 · 다시 완주해 주세요" : playerSession ? "점수 계산 중" : "아이디를 만들면 점수가 기록됩니다"}</strong>
+                        </div>
+                        <button onClick={() => setView("ranking")}>{playerSession ? "랭킹 보기" : "아이디 만들기"}</button>
+                      </div>
                       <p>“{currentUnit.t}”</p>
                       <div className="console-result__actions">
                         <button onClick={goToNext}>[ ENTER ] 다음 구절</button>
@@ -1916,6 +2097,13 @@ export function BibleTypingApp() {
                       <div><strong>{result.accuracy.toFixed(1)}</strong><span>정확도 %</span></div>
                       <div><strong>{result.durationSeconds.toFixed(1)}</strong><span>걸린 시간</span></div>
                     </div>
+                      <div className={`record-mode-score ${result.score !== undefined ? "is-scored" : ""}`}>
+                        <div>
+                          <span>{playerSession ? "랭킹 기록 점수" : "기록 모드 OFF"}</span>
+                          <strong>{result.score !== undefined ? `+${formatNumber(result.score)}점` : result.scoreError ? "기록 실패 · 다시 완주해 주세요" : playerSession ? "점수 계산 중" : "아이디를 만들면 점수가 기록됩니다"}</strong>
+                        </div>
+                        <button onClick={() => setView("ranking")}>{playerSession ? "랭킹 보기" : "아이디 만들기"}</button>
+                      </div>
                     <p className="result-verse">“{currentUnit.t}”</p>
                     <div className="button-row button-row--center">
                       <button className="button button--primary" onClick={goToNext}>다음 구절 <ArrowRightIcon size={18} weight="bold" aria-hidden="true" /></button>
@@ -1925,6 +2113,101 @@ export function BibleTypingApp() {
                 )}
               </section>
               )}
+            </div>
+          )}
+
+          {view === "ranking" && (
+            <div className="page page--ranking">
+              <header className="page-heading ranking-heading">
+                <div><span className="eyebrow">RECORD MODE / LIVE RANKING</span><h1>말씀을 입력한 만큼<br />점수로 남깁니다.</h1></div>
+                <p>일반 타자연습과 말씀 전투가 하나의 선수 기록으로 합산됩니다.</p>
+              </header>
+
+              <section className="ranking-account" aria-labelledby="ranking-account-title">
+                {playerSummary ? (
+                  <>
+                    <div className="ranking-account__identity">
+                      <span>기록 모드 ON</span>
+                      <h2 id="ranking-account-title">{playerSummary.id}</h2>
+                      <p>이 브라우저에서 완주한 모든 연습이 자동으로 랭킹에 반영됩니다.</p>
+                    </div>
+                    <div className="ranking-account__metrics">
+                      <div><span>전체 순위</span><strong>#{formatNumber(playerSummary.rank)}</strong></div>
+                      <div><span>누적 점수</span><strong>{formatNumber(playerSummary.totalScore)}</strong></div>
+                      <div><span>최고 한 판</span><strong>{formatNumber(playerSummary.bestScore)}</strong></div>
+                      <div><span>기록 횟수</span><strong>{formatNumber(playerSummary.totalSessions)}</strong></div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="ranking-account__identity">
+                      <span>기록 모드 시작</span>
+                      <h2 id="ranking-account-title">중복 없는 선수 아이디를 만드세요.</h2>
+                      <p>가입 절차 없이 아이디를 선점하면 이 브라우저에 전용 기록 키가 저장됩니다.</p>
+                    </div>
+                    <form className="ranking-account__form" onSubmit={createPlayer}>
+                      <label htmlFor="player-id">선수 아이디</label>
+                      <div>
+                        <input
+                          id="player-id"
+                          value={playerIdDraft}
+                          onChange={(event) => setPlayerIdDraft(event.target.value)}
+                          minLength={2}
+                          maxLength={12}
+                          autoComplete="username"
+                          placeholder="한글·영문·숫자 2~12자"
+                          disabled={accountBusy}
+                          required
+                        />
+                        <button type="submit" disabled={accountBusy}>{accountBusy ? "확인 중" : "아이디 생성"}</button>
+                      </div>
+                      <small>같은 아이디는 두 번 만들 수 없습니다. 현재 기기의 브라우저 데이터를 지우면 기록 키도 사라질 수 있습니다.</small>
+                    </form>
+                  </>
+                )}
+                {accountMessage && <p className="ranking-account__message" role="status">{accountMessage}</p>}
+              </section>
+
+              <section className="leaderboard-section" aria-labelledby="leaderboard-title">
+                <header className="leaderboard-section__header">
+                  <div><span>TOP 50</span><h2 id="leaderboard-title">말씀타자 랭킹</h2></div>
+                  <div className="ranking-tabs" role="group" aria-label="랭킹 종류">
+                    {([
+                      ["overall", "통합"],
+                      ["standard", "타자연습"],
+                      ["battle", "말씀 전투"],
+                    ] as const).map(([scope, label]) => (
+                      <button key={scope} className={rankingScope === scope ? "is-active" : ""} onClick={() => { setLeaderboardBusy(true); setRankingScope(scope); }} aria-pressed={rankingScope === scope}>{label}</button>
+                    ))}
+                  </div>
+                </header>
+
+                <div className="leaderboard-table" aria-live="polite" aria-busy={leaderboardBusy}>
+                  <div className="leaderboard-table__head" aria-hidden="true">
+                    <span>순위</span><span>선수</span><span>점수</span><span>최고 타수</span><span>정확도</span><span>기록</span>
+                  </div>
+                  {leaderboardBusy ? (
+                    <div className="leaderboard-empty">랭킹을 집계하고 있습니다.</div>
+                  ) : leaderboard.length ? leaderboard.map((entry) => (
+                    <article className={entry.id.toLocaleLowerCase("ko-KR") === playerSummary?.id.toLocaleLowerCase("ko-KR") ? "is-me" : ""} key={`${rankingScope}-${entry.id}`}>
+                      <strong className="leaderboard-rank">{`${entry.rank}`.padStart(2, "0")}</strong>
+                      <div><strong>{entry.id}</strong>{entry.rank <= 3 && <small>{entry.rank === 1 ? "GOLD" : entry.rank === 2 ? "SILVER" : "BRONZE"}</small>}</div>
+                      <strong>{formatNumber(entry.score)}<small>점</small></strong>
+                      <span>{formatNumber(entry.bestCpm)}<small>타/분</small></span>
+                      <span>{entry.bestAccuracy.toFixed(1)}<small>%</small></span>
+                      <span>{formatNumber(entry.totalSessions)}<small>회</small></span>
+                    </article>
+                  )) : (
+                    <div className="leaderboard-empty">아직 등록된 기록이 없습니다. 첫 번째 순위의 주인공이 되어 보세요.</div>
+                  )}
+                </div>
+              </section>
+
+              <section className="score-rules" aria-label="점수 계산 방식">
+                <span>점수 기준</span>
+                <p>정확도 비중이 가장 크며 타수, 정확 콤보, 입력 길이를 함께 계산합니다. 말씀 전투는 단계 보너스가 추가되고 오타는 감점됩니다.</p>
+                <strong>{playerSummary ? `현재 통합 ${formatNumber(playerSummary.totalScore)}점` : "아이디 생성 후 자동 기록"}</strong>
+              </section>
             </div>
           )}
 

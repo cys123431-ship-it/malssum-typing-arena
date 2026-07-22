@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 
 const title = "말씀타자 — 성경으로 채우는 타자 습관";
-const description = "성경 66권을 따라 쓰며 타자 속도, 정확도, 진도와 달성을 기록하는 개인용 타자연습 게임";
+const description = "성경 66권 타자연습과 25단계 말씀 전투를 즐기고, 선수 아이디로 점수와 실시간 랭킹을 기록하는 웹게임";
 
 export async function generateMetadata(): Promise<Metadata> {
   const incomingHeaders = await headers();
@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
     .split(",")[0]
     .trim();
   const metadataBase = new URL(`${protocol}://${host}`);
-  const socialImage = new URL("/og.png", metadataBase).toString();
+  const socialImage = new URL("/og-ranking.png", metadataBase).toString();
 
   return {
     metadataBase,
@@ -31,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       type: "website",
       locale: "ko_KR",
-      images: [{ url: socialImage, width: 1734, height: 907, alt: "말씀타자" }],
+      images: [{ url: socialImage, width: 1734, height: 907, alt: "말씀타자 타자연습·말씀 전투·실시간 랭킹" }],
     },
     twitter: {
       card: "summary_large_image",

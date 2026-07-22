@@ -1,56 +1,92 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { eq, gt, sql } from "drizzle-orm";
 import { getDb } from "../../../db";
-import {
-  completedVerses,
-  practiceDays,
-  practiceSessions,
-  profile,
-} from "../../../db/schema";
+import { players, rankedSessions } from "../../../db/schema";
+import { authenticatePlayer, unauthorizedPlayerResponse } from "../player-auth";
 
-const PROFILE_ID = "owner";
+type PracticeMode = "standard" | "battle";
+
+type StoredProgress = {
+  completedIds: string[];
+  currentIndex: number;
+  dailyGoal: number;
+  totalSessions: number;
+  totalTypedChars: number;
+  correctChars: number;
+  bestCpm: number;
+  bestAccuracy: number;
+  days: Array<{ date: string; versesCompleted: number; sessions: number }>;
+  recent: Array<{
+    verseId: string;
+    bookCode: string;
+    cpm: number;
+    accuracy: number;
+    durationSeconds: number;
+    completedAt: string;
+    mode?: PracticeMode;
+    score?: number;
+  }>;
+};
+
+const EMPTY_PROGRESS: StoredProgress = {
+  completedIds: [],
+  currentIndex: 0,
+  dailyGoal: 10,
+  totalSessions: 0,
+  totalTypedChars: 0,
+  correctChars: 0,
+  bestCpm: 0,
+  bestAccuracy: 0,
+  days: [],
+  recent: [],
+};
+
+function parseProgress(value: string): StoredProgress {
+  try {
+    const parsed = JSON.parse(value) as Partial<StoredProgress>;
+    return {
+      ...EMPTY_PROGRESS,
+      ...parsed,
+      completedIds: Array.isArray(parsed.completedIds) ? parsed.completedIds : [],
+      days: Array.isArray(parsed.days) ? parsed.days : [],
+      recent: Array.isArray(parsed.recent) ? parsed.recent : [],
+    };
+  } catch {
+    return { ...EMPTY_PROGRESS };
+  }
+}
+
+function calculateSessionScore(input: {
+  mode: PracticeMode;
+  cpm: number;
+  accuracy: number;
+  typedChars: number;
+  correctChars: number;
+  combo: number;
+  stageId: number | null;
+}) {
+  const accuracyFactor = Math.pow(input.accuracy / 100, 2);
+  const speedPoints = Math.min(3000, input.cpm) * 4;
+  const lengthPoints = input.correctChars * 12;
+  const comboPoints = Math.min(1000, input.combo) * 3;
+  const battleBonus = input.mode === "battle" ? 500 + ((input.stageId ?? 1) * 80) : 0;
+  const mistakePenalty = Math.max(0, input.typedChars - input.correctChars) * 25;
+  return Math.max(0, Math.round(((speedPoints + lengthPoints + comboPoints + battleBonus) * accuracyFactor) - mistakePenalty));
+}
 
 function errorResponse(error: unknown) {
-  const message = error instanceof Error ? error.message : "진도 데이터를 불러오지 못했습니다.";
+  const message = error instanceof Error ? error.message : "기록을 저장하지 못했습니다.";
   const unavailable = message.includes("no such table") || message.includes("binding `DB`");
   return Response.json(
-    { error: unavailable ? "진도 저장소를 준비 중입니다." : message },
+    { error: unavailable ? "랭킹 저장소를 준비 중입니다." : message },
     { status: unavailable ? 503 : 500 },
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const db = getDb();
-    await db.insert(profile).values({ id: PROFILE_ID }).onConflictDoNothing();
-
-    const [profileRow] = await db.select().from(profile).where(eq(profile.id, PROFILE_ID));
-    const completedRows = await db
-      .select({ id: completedVerses.verseId })
-      .from(completedVerses);
-    const days = await db
-      .select()
-      .from(practiceDays)
-      .orderBy(desc(practiceDays.date))
-      .limit(120);
-    const recent = await db
-      .select()
-      .from(practiceSessions)
-      .orderBy(desc(practiceSessions.id))
-      .limit(12);
-
-    return Response.json({
-      completedIds: completedRows.map((row) => row.id),
-      currentIndex: profileRow.currentIndex,
-      dailyGoal: profileRow.dailyGoal,
-      totalSessions: profileRow.totalSessions,
-      totalTypedChars: profileRow.totalTypedChars,
-      correctChars: profileRow.correctChars,
-      bestCpm: profileRow.bestCpm,
-      bestAccuracy: profileRow.bestAccuracy,
-      days,
-      recent,
-      synced: true,
-    });
+    const player = await authenticatePlayer(request);
+    if (!player) return unauthorizedPlayerResponse();
+    return Response.json({ ...parseProgress(player.progressJson), synced: true });
   } catch (error) {
     return errorResponse(error);
   }
@@ -58,7 +94,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const payload = (await request.json()) as {
+    const player = await authenticatePlayer(request);
+    if (!player) return unauthorizedPlayerResponse();
+
+    const payload = await request.json() as {
       verseId?: string;
       bookCode?: string;
       weight?: number;
@@ -69,11 +108,15 @@ export async function POST(request: Request) {
       correctChars?: number;
       currentIndex?: number;
       localDate?: string;
+      mode?: PracticeMode;
+      combo?: number;
+      stageId?: number;
     };
 
     const verseId = payload.verseId?.trim() ?? "";
     const bookCode = payload.bookCode?.trim() ?? "";
     const localDate = payload.localDate?.trim() ?? "";
+    const mode: PracticeMode = payload.mode === "battle" ? "battle" : "standard";
     const weight = Math.max(1, Math.min(20, Math.round(payload.weight ?? 1)));
     const cpm = Math.max(0, Math.min(3000, Math.round(payload.cpm ?? 0)));
     const accuracy = Math.max(0, Math.min(100, Number(payload.accuracy ?? 0)));
@@ -81,57 +124,96 @@ export async function POST(request: Request) {
     const typedChars = Math.max(0, Math.min(10000, Math.round(payload.typedChars ?? 0)));
     const correctChars = Math.max(0, Math.min(typedChars, Math.round(payload.correctChars ?? 0)));
     const currentIndex = Math.max(0, Math.round(payload.currentIndex ?? 0));
+    const combo = Math.max(0, Math.min(1000, Math.round(payload.combo ?? 0)));
+    const stageId = mode === "battle" ? Math.max(1, Math.min(25, Math.round(payload.stageId ?? 1))) : null;
 
     if (!verseId || !bookCode || !/^\d{4}-\d{2}-\d{2}$/.test(localDate)) {
       return Response.json({ error: "올바르지 않은 연습 결과입니다." }, { status: 400 });
     }
 
-    const db = getDb();
+    const score = calculateSessionScore({ mode, cpm, accuracy, typedChars, correctChars, combo, stageId });
     const completedAt = new Date().toISOString();
+    const previous = parseProgress(player.progressJson);
+    const completedIds = previous.completedIds.includes(verseId)
+      ? previous.completedIds
+      : [...previous.completedIds, verseId];
+    const days = [...previous.days];
+    const dayIndex = days.findIndex((day) => day.date === localDate);
+    const previousDay = dayIndex >= 0 ? days[dayIndex] : { date: localDate, versesCompleted: 0, sessions: 0 };
+    const updatedDay = {
+      ...previousDay,
+      versesCompleted: previousDay.versesCompleted + weight,
+      sessions: previousDay.sessions + 1,
+    };
+    if (dayIndex >= 0) days[dayIndex] = updatedDay;
+    else days.unshift(updatedDay);
 
-    await db.insert(profile).values({ id: PROFILE_ID }).onConflictDoNothing();
-    await db.insert(practiceSessions).values({
-      verseId,
-      bookCode,
-      cpm,
-      accuracy,
-      durationSeconds,
-      completedAt,
-    });
-    await db
-      .insert(completedVerses)
-      .values({ verseId, bookCode, weight, bestCpm: cpm, bestAccuracy: accuracy, completedAt })
-      .onConflictDoUpdate({
-        target: completedVerses.verseId,
-        set: {
-          bestCpm: sql`max(${completedVerses.bestCpm}, excluded.best_cpm)`,
-          bestAccuracy: sql`max(${completedVerses.bestAccuracy}, excluded.best_accuracy)`,
-        },
-      });
-    await db
-      .insert(practiceDays)
-      .values({ date: localDate, versesCompleted: weight, sessions: 1 })
-      .onConflictDoUpdate({
-        target: practiceDays.date,
-        set: {
-          versesCompleted: sql`${practiceDays.versesCompleted} + ${weight}`,
-          sessions: sql`${practiceDays.sessions} + 1`,
-        },
-      });
-    await db
-      .update(profile)
-      .set({
-        currentIndex,
-        totalSessions: sql`${profile.totalSessions} + 1`,
-        totalTypedChars: sql`${profile.totalTypedChars} + ${typedChars}`,
-        correctChars: sql`${profile.correctChars} + ${correctChars}`,
-        bestCpm: sql`max(${profile.bestCpm}, ${cpm})`,
-        bestAccuracy: sql`max(${profile.bestAccuracy}, ${accuracy})`,
+    const updatedProgress: StoredProgress = {
+      ...previous,
+      completedIds,
+      currentIndex,
+      totalSessions: previous.totalSessions + 1,
+      totalTypedChars: previous.totalTypedChars + typedChars,
+      correctChars: previous.correctChars + correctChars,
+      bestCpm: Math.max(previous.bestCpm, cpm),
+      bestAccuracy: Math.max(previous.bestAccuracy, accuracy),
+      days: days.slice(0, 366),
+      recent: [{ verseId, bookCode, cpm, accuracy, durationSeconds, completedAt, mode, score }, ...previous.recent].slice(0, 20),
+    };
+
+    const nextTotalScore = player.totalScore + score;
+    const nextPracticeScore = player.practiceScore + (mode === "standard" ? score : 0);
+    const nextBattleScore = player.battleScore + (mode === "battle" ? score : 0);
+    const nextBestScore = Math.max(player.bestScore, score);
+    const db = getDb();
+    await db.batch([
+      db.insert(rankedSessions).values({
+        playerId: player.id,
+        mode,
+        score,
+        verseId,
+        bookCode,
+        cpm,
+        accuracy,
+        combo,
+        stageId,
+        durationSeconds,
+        completedAt,
+      }),
+      db.update(players).set({
+        progressJson: JSON.stringify(updatedProgress),
+        totalScore: nextTotalScore,
+        practiceScore: nextPracticeScore,
+        battleScore: nextBattleScore,
+        totalSessions: player.totalSessions + 1,
+        bestScore: nextBestScore,
+        bestCpm: Math.max(player.bestCpm, cpm),
+        bestAccuracy: Math.max(player.bestAccuracy, accuracy),
         updatedAt: completedAt,
-      })
-      .where(eq(profile.id, PROFILE_ID));
+      }).where(eq(players.id, player.id)),
+    ]);
 
-    return Response.json({ ok: true, synced: true });
+    const [higher] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(players)
+      .where(gt(players.totalScore, nextTotalScore));
+
+    return Response.json({
+      ok: true,
+      synced: true,
+      score,
+      player: {
+        id: player.displayId,
+        totalScore: nextTotalScore,
+        practiceScore: nextPracticeScore,
+        battleScore: nextBattleScore,
+        totalSessions: player.totalSessions + 1,
+        bestScore: nextBestScore,
+        bestCpm: Math.max(player.bestCpm, cpm),
+        bestAccuracy: Math.max(player.bestAccuracy, accuracy),
+        rank: Number(higher?.count ?? 0) + 1,
+      },
+    });
   } catch (error) {
     return errorResponse(error);
   }

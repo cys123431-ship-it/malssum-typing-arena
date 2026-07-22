@@ -1,98 +1,61 @@
-# vinext-starter
+# 말씀타자
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+성경 구절로 연습하는 한국어 타자 웹게임입니다. 일반 타자 연습과 25단계 말씀 전투, 캐릭터 성장, 플레이어별 점수 기록과 랭킹을 한 앱에서 제공합니다.
 
-## Prerequisites
+## 주요 기능
 
-- Node.js `>=22.13.0`
+- 개역개정4판 구약·신약 66권 기반 타자 연습
+- 모바일·노트북 반응형 UI와 라이트·다크 모드
+- 기존 테마와 별도로 선택할 수 있는 `활자 콘솔` 테마
+- 입력한 글자만 색상으로 구분하고 오타가 있어도 계속 진행하는 판정 방식
+- 일반 연습과 25단계 말씀 전투
+- 6명의 선택 캐릭터, 성장·무기 강화·단계별 적
+- 중복되지 않는 플레이어 ID와 브라우저별 보안 키
+- 서버에 저장되는 일반·전투 점수와 전체 랭킹
+- 진도, 정확도, 타수, 콤보, 연속 기록 저장
 
-## Quick Start
+## 실행
+
+Node.js 22.13 이상과 pnpm을 사용합니다.
 
 ```bash
-npm install
-npm run dev
-npm run build
+pnpm install
+pnpm dev
 ```
 
-This starter does not use `wrangler.jsonc`.
+검증과 프로덕션 빌드:
 
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+pnpm test
+pnpm exec tsc --noEmit
+pnpm lint
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+## 데이터 저장
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+- 로그인하지 않은 진행 기록과 테마 설정은 브라우저에 보존됩니다.
+- 플레이어 ID를 만들면 서버가 발급한 보안 키를 해당 브라우저에 저장합니다.
+- 완주한 일반 연습과 전투 결과는 서버에서 점수로 계산되어 랭킹에 반영됩니다.
+- 플레이어 ID는 대소문자와 공백을 정규화해 중복을 막습니다.
+- 브라우저 데이터를 지우면 보안 키도 사라질 수 있으므로 같은 ID를 다른 기기에서 바로 복구하는 계정 방식은 아닙니다.
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+## 기술 구성
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+- React 19 / Next.js 호환 App Router / vinext
+- Cloudflare Workers와 D1
+- Drizzle ORM 및 SQL 마이그레이션
+- OpenAI Sites 배포 설정: `.openai/hosting.json`
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+데이터베이스 스키마를 바꾼 뒤에는 다음 명령으로 마이그레이션을 생성합니다.
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+```bash
+pnpm db:generate
+```
 
-## Useful Commands
+## 성경 본문 안내
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+앱에는 사용자가 제공한 `개역개정4판` 텍스트가 포함되어 있습니다. 이 프로젝트는 비영리 용도로 구성되었지만, 비영리라는 이유만으로 전자 매체 사용 허락이 자동으로 부여된다고 단정하지 않습니다. 공개 운영이나 재배포 전에는 [BIBLE_DATA.md](./BIBLE_DATA.md)와 대한성서공회의 최신 이용 조건을 확인하세요.
 
-## Learn More
+## 공개 사이트
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+[말씀타자 웹앱](https://bible-typing-practice-ko.yosubi123.chatgpt.site/)
