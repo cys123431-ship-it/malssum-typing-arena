@@ -4888,6 +4888,16 @@ html[data-theme="dark"] .battle-practice {
   white-space: nowrap;
 }
 
+.battle-current-word.is-long-word {
+  font-size: clamp(40px, 4.6vw, 68px);
+  letter-spacing: -0.1em;
+}
+
+.battle-current-word.is-very-long-word {
+  font-size: clamp(32px, 3.7vw, 54px);
+  letter-spacing: -0.11em;
+}
+
 .battle-current-word > span {
   position: relative;
   display: inline-block;
@@ -5340,6 +5350,14 @@ html[data-theme="dark"] .battle-practice {
 
   .battle-current-word {
     font-size: clamp(46px, 15vw, 64px);
+  }
+
+  .battle-current-word.is-long-word {
+    font-size: clamp(32px, 10vw, 46px);
+  }
+
+  .battle-current-word.is-very-long-word {
+    font-size: clamp(25px, 7.7vw, 36px);
   }
 
   .battle-next-word--1 {

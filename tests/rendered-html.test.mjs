@@ -84,6 +84,7 @@ test("adds the optional Bible word battle without replacing standard practice", 
   assert.match(css, /\.battle-health-track/);
   assert.match(css, /\.battle-hit-fx/);
   assert.match(css, /\.battle-miss-flash/);
+  assert.match(css, /\.battle-current-word\.is-very-long-word/);
 });
 
 test("keeps battle typing connected to the existing accuracy and completion logic", async () => {

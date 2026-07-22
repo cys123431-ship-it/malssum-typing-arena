@@ -987,8 +987,10 @@ export function BibleTypingApp() {
                         <div className="battle-word-queue" aria-label={`따라 쓸 구절: ${currentUnit.t}`} aria-live="polite">
                           {visibleConsoleWords.slice(0, 3).map((word, queueIndex) => {
                             const cursorOffset = Math.max(0, typed.length - word.start);
+                            const wordLength = Array.from(word.text).length;
+                            const wordLengthClass = wordLength > 10 ? "is-very-long-word" : wordLength > 7 ? "is-long-word" : "";
                             return queueIndex === 0 ? (
-                              <div className="battle-current-word" key={`${word.start}-${word.text}`}>
+                              <div className={`battle-current-word ${wordLengthClass}`} key={`${word.start}-${word.text}`}>
                                 {Array.from(word.text).map((character, offset) => {
                                   const absoluteIndex = word.start + offset;
                                   const state = absoluteIndex < typed.length
