@@ -67,3 +67,14 @@
 - P2: 없음
 
 final result: passed
+
+## Word Battle addendum — 2026-07-22
+
+- Reference evidence: the user-provided GIF sequence was extracted frame-by-frame and reviewed as a timing and intensity reference, not copied as product art.
+- Asset comparison: `qa-evidence/word-battle/effect-reference-asset-comparison.png` places the reference impact sequence beside the original enemy, impact, and projectile assets used by the implementation.
+- Interaction wiring checked: correct input creates a hit event, wrong input creates a miss event and lowers accuracy, combo resets after an error, health and score use live typing state, and completion uses the existing progress persistence path.
+- Responsive safeguards checked in source: desktop and mobile grids, 44px mobile controls, 320px rules, reduced-motion handling, and long-word scaling classes.
+- Build, type check, lint, six source-level regression tests, archive validation, private deployment, and deployed-bundle asset/class checks passed.
+- The private Sites sign-in gate prevented an automated post-deployment viewport screenshot without authorizing account access. No sign-in or access-policy change was made during QA.
+
+final result: limited — authenticated viewport capture pending
