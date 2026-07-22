@@ -4471,6 +4471,728 @@ html[data-theme="dark"] .console-live-stats span {
   }
 }
 
+/* 25-stage 말씀 전투 캠페인 */
+.campaign-map {
+  --map-page: #e8efe8;
+  --map-panel: #f7f4e9;
+  --map-ink: #071e19;
+  --map-muted: #667b71;
+  --map-line: rgba(7, 30, 25, 0.24);
+  --map-accent: #c5ef3a;
+  display: grid;
+  width: 100%;
+  height: 100dvh;
+  min-height: 680px;
+  overflow: hidden;
+  grid-template-rows: 72px minmax(0, 1fr);
+  background: var(--map-page);
+  color: var(--map-ink);
+  font-family: var(--sans);
+}
+
+html[data-theme="dark"] .campaign-map {
+  --map-page: #061a15;
+  --map-panel: #0b251e;
+  --map-ink: #f3f1e8;
+  --map-muted: #9daea5;
+  --map-line: #3c514a;
+}
+
+.campaign-map__header {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  min-width: 0;
+  padding: 0 clamp(18px, 3vw, 48px);
+  grid-template-columns: minmax(170px, 0.8fr) minmax(260px, 1.2fr) minmax(100px, 0.55fr);
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid var(--map-line);
+  background: var(--map-page);
+  font-variant-numeric: tabular-nums;
+}
+
+.campaign-map__header button {
+  min-height: 44px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 850;
+  text-align: left;
+}
+
+.campaign-map__header > div {
+  min-width: 0;
+}
+
+.campaign-map__header span,
+.campaign-map__header strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campaign-map__header span {
+  margin-bottom: 2px;
+  color: var(--map-muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.campaign-map__header > div > strong {
+  font-size: 15px;
+}
+
+.campaign-map__header p {
+  justify-self: end;
+  margin: 0;
+  color: var(--map-muted);
+  font-size: 13px;
+}
+
+.campaign-map__header p strong {
+  display: inline;
+  color: var(--fighter-accent);
+  font-size: 24px;
+}
+
+.campaign-map__body {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1.24fr) minmax(360px, 0.76fr);
+}
+
+.campaign-map__route {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border-right: 1px solid var(--map-line);
+  scrollbar-color: var(--fighter-accent) transparent;
+}
+
+.campaign-map__intro {
+  padding: clamp(28px, 5vh, 58px) clamp(24px, 5vw, 72px) clamp(24px, 4vh, 46px);
+  border-bottom: 1px solid var(--map-line);
+}
+
+.campaign-map__intro > span,
+.campaign-brief__stage > span,
+.campaign-brief__copy > span,
+.campaign-brief__reward > span {
+  color: var(--fighter-accent);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.campaign-map__intro h1 {
+  margin: 12px 0 14px;
+  font-size: clamp(44px, 5.5vw, 78px);
+  font-weight: 950;
+  letter-spacing: -0.09em;
+  line-height: 0.95;
+}
+
+.campaign-map__intro p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--map-muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.campaign-map__acts {
+  display: grid;
+}
+
+.campaign-act {
+  display: grid;
+  min-height: 104px;
+  grid-template-columns: minmax(150px, 0.34fr) minmax(0, 1fr);
+  border-bottom: 1px solid var(--map-line);
+}
+
+.campaign-act > header {
+  display: flex;
+  padding: 20px clamp(16px, 2.5vw, 34px);
+  justify-content: center;
+  flex-direction: column;
+  border-right: 1px solid var(--map-line);
+}
+
+.campaign-act > header span {
+  color: var(--fighter-accent);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.campaign-act > header h2 {
+  margin: 5px 0 0;
+  font-size: clamp(16px, 1.5vw, 22px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.campaign-act ol {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  list-style: none;
+}
+
+.campaign-act li {
+  min-width: 0;
+  border-right: 1px solid var(--map-line);
+}
+
+.campaign-act li:last-child {
+  border-right: 0;
+}
+
+.campaign-act button {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 84px;
+  padding: 12px 8px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: transparent;
+  color: var(--map-ink);
+  flex-direction: column;
+}
+
+.campaign-act button > span {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: clamp(22px, 2.2vw, 34px);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.campaign-act button small {
+  margin-top: 7px;
+  color: var(--map-muted);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.campaign-act button:hover:not(:disabled),
+.campaign-act button.is-selected {
+  background: color-mix(in srgb, var(--fighter-accent) 18%, var(--map-panel));
+}
+
+.campaign-act button.is-selected {
+  box-shadow: inset 0 -6px var(--fighter-accent);
+}
+
+.campaign-act button.is-cleared > span,
+.campaign-act button.is-cleared small {
+  color: var(--fighter-accent);
+}
+
+.campaign-act button.is-boss > span {
+  font-size: clamp(28px, 2.8vw, 42px);
+}
+
+.campaign-act button:disabled {
+  color: var(--map-muted);
+  cursor: not-allowed;
+  opacity: 0.34;
+}
+
+.campaign-map button:focus-visible {
+  outline: 3px solid #c5ef3a;
+  outline-offset: -3px;
+}
+
+.campaign-brief {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  grid-template-rows: auto minmax(210px, 1fr) auto auto auto auto;
+  background: var(--map-panel);
+}
+
+.campaign-brief__stage {
+  display: flex;
+  min-height: 66px;
+  padding: 13px clamp(18px, 3vw, 38px);
+  justify-content: center;
+  border-bottom: 1px solid var(--map-line);
+  flex-direction: column;
+}
+
+.campaign-brief__stage strong {
+  margin-top: 3px;
+  font-size: 18px;
+}
+
+.campaign-brief__enemy {
+  position: relative;
+  display: grid;
+  min-height: 210px;
+  overflow: hidden;
+  place-items: end center;
+  border-bottom: 1px solid var(--map-line);
+  background: color-mix(in srgb, var(--fighter-accent) 9%, var(--map-page));
+}
+
+.campaign-brief__enemy::before {
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  bottom: 10%;
+  left: 10%;
+  border: 1px solid color-mix(in srgb, var(--fighter-accent) 55%, var(--map-line));
+  content: "";
+}
+
+.campaign-brief__enemy img {
+  z-index: 2;
+  width: 88%;
+  height: 96%;
+  object-fit: contain;
+  object-position: center bottom;
+  animation: fighter-portrait-enter 280ms ease-out both;
+}
+
+.campaign-brief__enemy.is-final img {
+  width: 76%;
+}
+
+.campaign-brief__enemy > span {
+  position: absolute;
+  z-index: 3;
+  right: 14px;
+  bottom: 12px;
+  padding: 5px 7px;
+  background: var(--map-ink);
+  color: var(--map-page);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.campaign-brief__copy {
+  padding: 16px clamp(18px, 3vw, 38px);
+  border-bottom: 1px solid var(--map-line);
+}
+
+.campaign-brief__copy h2 {
+  margin: 4px 0 1px;
+  font-size: clamp(25px, 2.4vw, 38px);
+  font-weight: 950;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+.campaign-brief__copy p {
+  margin: 5px 0 0;
+  color: var(--map-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.campaign-growth {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid var(--map-line);
+}
+
+.campaign-growth > div {
+  min-width: 0;
+  padding: 12px clamp(12px, 2vw, 24px);
+  border-right: 1px solid var(--map-line);
+}
+
+.campaign-growth > div:last-child {
+  border-right: 0;
+}
+
+.campaign-growth span,
+.campaign-growth strong,
+.campaign-growth small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campaign-growth span,
+.campaign-growth small {
+  color: var(--map-muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.campaign-growth strong {
+  margin: 3px 0 7px;
+  color: var(--fighter-accent);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 20px;
+}
+
+.campaign-growth > div > div {
+  height: 4px;
+  margin-bottom: 5px;
+  background: var(--map-line);
+}
+
+.campaign-growth i {
+  display: block;
+  height: 100%;
+  background: var(--fighter-accent);
+}
+
+.campaign-brief__reward {
+  display: grid;
+  padding: 11px clamp(18px, 3vw, 38px);
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--map-line);
+  font-size: 10px;
+}
+
+.campaign-brief__start {
+  display: grid;
+  min-height: 64px;
+  padding: 0 clamp(18px, 3vw, 38px);
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  border-radius: 0;
+  background: var(--map-ink);
+  color: var(--map-page);
+  font-size: 16px;
+  font-weight: 900;
+  text-align: left;
+}
+
+.campaign-brief__start span {
+  color: var(--fighter-accent);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 10px;
+}
+
+.campaign-brief__start:hover {
+  background: var(--fighter-accent);
+  color: #071e19;
+}
+
+.campaign-brief__start:hover span {
+  color: #071e19;
+}
+
+.battle-player-health {
+  display: grid;
+  width: min(180px, 28vw);
+  margin-top: 14px !important;
+  gap: 5px;
+}
+
+.battle-player-health > span {
+  color: var(--battle-arena-ink);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.battle-player-health > i {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  background: #3c514a;
+}
+
+.battle-player-health > i > b {
+  display: block;
+  height: 100%;
+  margin: 0;
+  background: var(--fighter-accent);
+  font-size: 0;
+  transition: width 160ms ease;
+}
+
+.battle-enemy {
+  max-height: min(59vh, 540px);
+}
+
+.battle-defeat {
+  display: flex;
+  min-height: 0;
+  padding: clamp(24px, 5vh, 58px) clamp(22px, 6vw, 90px);
+  align-items: center;
+  justify-content: center;
+  background: var(--battle-arena);
+  color: var(--battle-arena-ink);
+  flex-direction: column;
+  text-align: center;
+}
+
+.battle-defeat__visual {
+  display: grid;
+  width: min(32vw, 340px);
+  height: min(36vh, 330px);
+  overflow: hidden;
+  place-items: end center;
+  border-bottom: 1px solid #3c514a;
+}
+
+.battle-defeat__visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: grayscale(0.35) brightness(0.72);
+}
+
+.battle-defeat > span {
+  margin-top: 18px;
+  color: var(--battle-wrong);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.battle-defeat h2 {
+  margin: 8px 0 10px;
+  font-size: clamp(38px, 5vw, 72px);
+  font-weight: 950;
+  letter-spacing: -0.08em;
+  line-height: 0.95;
+}
+
+.battle-defeat p {
+  margin: 0;
+  color: var(--battle-arena-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.battle-defeat__actions,
+.battle-victory__actions {
+  display: grid;
+  width: min(100%, 420px);
+  margin-top: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: #3c514a;
+}
+
+.battle-defeat__actions button {
+  min-height: 54px;
+  border-radius: 0;
+  background: var(--battle-arena-panel);
+  color: var(--battle-arena-ink);
+  font-weight: 900;
+}
+
+.battle-defeat__actions button:first-child {
+  background: var(--battle-accent);
+  color: #071e19;
+}
+
+.battle-victory__reward {
+  display: flex;
+  width: min(100%, 590px);
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border-top: 1px solid var(--battle-line);
+  border-bottom: 1px solid var(--battle-line);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.battle-victory__reward span {
+  color: var(--battle-muted);
+}
+
+.battle-victory__reward strong,
+.battle-victory__reward em {
+  color: var(--fighter-accent);
+  font-style: normal;
+}
+
+@media (max-width: 820px) {
+  .campaign-map {
+    min-height: 100dvh;
+    height: auto;
+    overflow: auto;
+    grid-template-rows: 60px auto;
+  }
+
+  .campaign-map__header {
+    position: sticky;
+    top: 0;
+    padding: 0 12px;
+    grid-template-columns: 118px minmax(0, 1fr) 66px;
+    gap: 8px;
+  }
+
+  .campaign-map__header button {
+    font-size: 9px;
+  }
+
+  .campaign-map__header span {
+    font-size: 7px;
+  }
+
+  .campaign-map__header > div > strong {
+    font-size: 11px;
+  }
+
+  .campaign-map__header p {
+    font-size: 9px;
+  }
+
+  .campaign-map__header p strong {
+    font-size: 16px;
+  }
+
+  .campaign-map__body {
+    display: flex;
+    min-height: calc(100dvh - 60px);
+    flex-direction: column;
+  }
+
+  .campaign-map__route {
+    overflow: visible;
+    border-right: 0;
+  }
+
+  .campaign-map__intro {
+    padding: 24px 18px;
+  }
+
+  .campaign-map__intro h1 {
+    font-size: clamp(40px, 13vw, 58px);
+  }
+
+  .campaign-act {
+    min-height: 92px;
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+
+  .campaign-act > header {
+    padding: 12px 10px;
+  }
+
+  .campaign-act > header h2 {
+    font-size: 12px;
+  }
+
+  .campaign-act button {
+    min-height: 80px;
+    padding: 8px 2px;
+  }
+
+  .campaign-act button > span,
+  .campaign-act button.is-boss > span {
+    font-size: clamp(19px, 6vw, 26px);
+  }
+
+  .campaign-act button small {
+    font-size: 6px;
+  }
+
+  .campaign-brief {
+    overflow: visible;
+    grid-template-rows: auto 300px auto auto auto auto;
+    border-top: 8px solid var(--fighter-accent);
+  }
+
+  .campaign-brief__enemy img {
+    width: min(84%, 360px);
+  }
+
+  .campaign-brief__enemy.is-final img {
+    width: min(70%, 290px);
+  }
+
+  .campaign-brief__copy h2 {
+    font-size: 31px;
+  }
+
+  .campaign-brief__reward {
+    padding: 11px 14px;
+    gap: 7px;
+    font-size: 8px;
+  }
+
+  .campaign-brief__start {
+    min-height: 64px;
+    padding: 0 16px;
+  }
+
+  .battle-player-health {
+    width: 118px;
+  }
+
+  .battle-enemy {
+    max-height: 34vh;
+  }
+
+  .battle-defeat {
+    padding: 18px;
+  }
+
+  .battle-defeat__visual {
+    width: min(72vw, 300px);
+    height: min(34vh, 280px);
+  }
+
+  .battle-defeat h2 {
+    font-size: clamp(36px, 11vw, 52px);
+  }
+
+  .battle-victory__reward {
+    flex-wrap: wrap;
+    gap: 5px 10px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 360px) {
+  .campaign-map__header {
+    grid-template-columns: 104px minmax(0, 1fr) 54px;
+    gap: 4px;
+  }
+
+  .campaign-act {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .campaign-act > header h2 {
+    font-size: 10px;
+  }
+
+  .campaign-act button > span,
+  .campaign-act button.is-boss > span {
+    font-size: 18px;
+  }
+}
+
 /* 말씀 전투: existing practice logic with an optional arcade presentation. */
 .home-battle {
   min-height: 48px;

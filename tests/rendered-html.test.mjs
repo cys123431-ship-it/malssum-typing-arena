@@ -77,7 +77,7 @@ test("adds the optional Bible word battle without replacing standard practice", 
   assert.match(app, />말씀 전투</);
   assert.match(app, /battleHealth/);
   assert.match(app, /battleScore/);
-  assert.match(app, /word-battle-enemy\.png/);
+  assert.match(app, /enemy-shadow\.webp/);
   assert.match(app, /word-impact-burst\.webp/);
   assert.match(app, /word-projectile-streak\.webp/);
   assert.match(css, /\.battle-practice/);
@@ -128,4 +128,24 @@ test("adds a persistent six-fighter chooser before Bible word battle", async () 
   assert.match(css, /\.fighter-select__roster/);
   assert.match(css, /\.battle-fighter-wrap\.is-attacking/);
   assert.match(css, /grid-auto-flow:\s*column/);
+});
+
+test("adds a persistent 25-stage campaign with growth and a final Satan battle", async () => {
+  const { app, css } = await readSources();
+
+  assert.match(app, /BATTLE_CAMPAIGN_STORAGE_KEY = "bible-typing-battle-campaign-v1"/);
+  assert.match(app, /const BATTLE_STAGES: BattleStage\[\]/);
+  assert.match(app, /\["사탄 · 심연의 왕", "마지막 왕좌"\]/);
+  assert.match(app, /enemy-satan\.webp/);
+  assert.match(app, /highestUnlockedStage/);
+  assert.match(app, /grantCampaignRewards/);
+  assert.match(app, /weaponLevel/);
+  assert.match(app, /setBattleDefeated\(true\)/);
+  assert.match(app, /마지막 왕좌까지/);
+  assert.match(app, /사탄을 물리쳤습니다/);
+  assert.match(css, /\.campaign-map/);
+  assert.match(css, /\.campaign-act/);
+  assert.match(css, /\.campaign-growth/);
+  assert.match(css, /\.battle-defeat/);
+  assert.match(css, /\.battle-player-health/);
 });

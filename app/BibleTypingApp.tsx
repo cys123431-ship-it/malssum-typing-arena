@@ -19,7 +19,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 
-type View = "home" | "library" | "battle-select" | "practice" | "progress";
+type View = "home" | "library" | "battle-select" | "battle-map" | "practice" | "progress";
 type VisualTheme = "classic" | "type-console";
 type PracticeMode = "standard" | "battle";
 type BattleFighterId = "seoha" | "mira" | "yuna" | "riel" | "hana" | "arin";
@@ -45,6 +45,40 @@ type BattleFeedback = {
   id: number;
   kind: "hit" | "miss";
   strength: 1 | 2 | 3;
+};
+
+type BattleStage = {
+  id: number;
+  act: number;
+  region: string;
+  enemy: string;
+  title: string;
+  asset: string;
+  width: number;
+  height: number;
+  maxHealth: number;
+  missDamage: number;
+  characterXp: number;
+  weaponXp: number;
+  boss: boolean;
+};
+
+type FighterCampaignProgress = {
+  level: number;
+  xp: number;
+  weaponLevel: number;
+  weaponXp: number;
+  clearedStages: number[];
+};
+
+type BattleCampaignState = Record<BattleFighterId, FighterCampaignProgress>;
+
+type BattleReward = {
+  characterXp: number;
+  weaponXp: number;
+  levelUps: number;
+  weaponLevelUps: number;
+  firstClear: boolean;
 };
 
 type BibleUnit = {
@@ -114,6 +148,7 @@ type WordRange = {
 const STORAGE_KEY = "bible-typing-progress-v1";
 const VISUAL_THEME_STORAGE_KEY = "bible-typing-visual-theme";
 const BATTLE_FIGHTER_STORAGE_KEY = "bible-typing-battle-fighter";
+const BATTLE_CAMPAIGN_STORAGE_KEY = "bible-typing-battle-campaign-v1";
 const BATTLE_FIGHTERS: BattleFighter[] = [
   {
     id: "seoha",
@@ -212,6 +247,147 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     accent: "#51d5ca",
   },
 ];
+
+const BATTLE_STAGE_NAMES = [
+  ["속삭이는 그림자", "첫 어둠의 흔적"],
+  ["거짓의 잔상", "흔들리는 목소리"],
+  ["탐욕의 짐승", "붙드는 검은 손"],
+  ["공포의 파수꾼", "밤의 경계선"],
+  ["검은 사도", "잿빛 들판의 주인"],
+  ["침묵의 사냥개", "닫힌 문 앞에서"],
+  ["쇠사슬 수문장", "무거운 속박"],
+  ["절망의 기사", "빛을 잊은 갑옷"],
+  ["망각의 성벽", "기억을 삼킨 벽"],
+  ["침묵의 거인", "성벽의 마지막 문"],
+  ["먹빛 사서", "검게 번진 기록"],
+  ["왜곡의 필경사", "바뀌어 버린 문장"],
+  ["탐식의 서고지기", "끝없는 두루마리"],
+  ["거짓의 대심문관", "진실을 묻는 자"],
+  ["찢긴 기록의 왕", "기록고의 봉인"],
+  ["타락한 성가대", "금이 간 노래"],
+  ["재의 집행자", "꺼지지 않는 심판"],
+  ["교만의 대사제", "높아진 검은 제단"],
+  ["멸망의 수호자", "무너지는 기둥"],
+  ["무너진 성소의 군주", "성소의 마지막 밤"],
+  ["심연의 눈", "문 너머의 시선"],
+  ["유혹의 군주", "달콤한 거짓말"],
+  ["붉은 용의 그림자", "타오르는 심연"],
+  ["타락한 새벽별", "왕좌 앞의 수호자"],
+  ["사탄 · 심연의 왕", "마지막 왕좌"],
+] as const;
+
+const BATTLE_REGIONS = ["잿빛 들판", "침묵의 성벽", "뒤틀린 기록고", "무너진 성소", "심연의 문"] as const;
+const BATTLE_ENEMY_ASSETS = [
+  { asset: "/game-assets/enemies/enemy-shadow.webp", width: 1402, height: 1122 },
+  { asset: "/game-assets/enemies/enemy-gatekeeper.webp", width: 1402, height: 1122 },
+  { asset: "/game-assets/enemies/enemy-scribe.webp", width: 1397, height: 1126 },
+  { asset: "/game-assets/enemies/enemy-sanctum-lord.webp", width: 1402, height: 1122 },
+  { asset: "/game-assets/enemies/enemy-fallen-star.webp", width: 1149, height: 1369 },
+] as const;
+
+const BATTLE_STAGES: BattleStage[] = BATTLE_STAGE_NAMES.map(([enemy, title], index) => {
+  const id = index + 1;
+  const act = Math.min(5, Math.floor(index / 5) + 1);
+  const art = id === 25
+    ? { asset: "/game-assets/enemies/enemy-satan.webp", width: 1122, height: 1402 }
+    : BATTLE_ENEMY_ASSETS[act - 1];
+  return {
+    id,
+    act,
+    region: BATTLE_REGIONS[act - 1],
+    enemy,
+    title,
+    ...art,
+    maxHealth: id === 25 ? 5200 : 520 + (id * 128),
+    missDamage: id === 25 ? 18 : 4 + Math.floor(id / 3),
+    characterXp: id === 25 ? 720 : 70 + (id * 15),
+    weaponXp: id === 25 ? 380 : 34 + (id * 7),
+    boss: id % 5 === 0,
+  };
+});
+
+function emptyFighterCampaign(): FighterCampaignProgress {
+  return { level: 1, xp: 0, weaponLevel: 1, weaponXp: 0, clearedStages: [] };
+}
+
+function emptyBattleCampaign(): BattleCampaignState {
+  return Object.fromEntries(BATTLE_FIGHTERS.map((fighter) => [fighter.id, emptyFighterCampaign()])) as BattleCampaignState;
+}
+
+function readBattleCampaign(): BattleCampaignState {
+  const fallback = emptyBattleCampaign();
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(BATTLE_CAMPAIGN_STORAGE_KEY);
+    if (!raw) return fallback;
+    const saved = JSON.parse(raw) as Partial<BattleCampaignState>;
+    for (const fighter of BATTLE_FIGHTERS) {
+      const value = saved[fighter.id];
+      if (!value) continue;
+      fallback[fighter.id] = {
+        level: Math.max(1, Math.min(25, Number(value.level) || 1)),
+        xp: Math.max(0, Number(value.xp) || 0),
+        weaponLevel: Math.max(1, Math.min(10, Number(value.weaponLevel) || 1)),
+        weaponXp: Math.max(0, Number(value.weaponXp) || 0),
+        clearedStages: Array.from(new Set(Array.isArray(value.clearedStages) ? value.clearedStages : []))
+          .map(Number)
+          .filter((stage) => stage >= 1 && stage <= 25),
+      };
+    }
+  } catch {
+    window.localStorage.removeItem(BATTLE_CAMPAIGN_STORAGE_KEY);
+  }
+  return fallback;
+}
+
+function characterXpTarget(level: number) {
+  return 100 + (level * 45);
+}
+
+function weaponXpTarget(level: number) {
+  return 150 + (level * 85);
+}
+
+function highestUnlockedStage(progress: FighterCampaignProgress) {
+  let cleared = 0;
+  while (progress.clearedStages.includes(cleared + 1)) cleared += 1;
+  return Math.min(25, cleared + 1);
+}
+
+function grantCampaignRewards(progress: FighterCampaignProgress, stage: BattleStage, firstClear: boolean) {
+  const characterXpGained = Math.max(1, Math.round(stage.characterXp * (firstClear ? 1 : 0.35)));
+  const weaponXpGained = Math.max(1, Math.round(stage.weaponXp * (firstClear ? 1 : 0.35)));
+  let level = progress.level;
+  let xp = progress.xp + characterXpGained;
+  let levelUps = 0;
+  while (level < 25 && xp >= characterXpTarget(level)) {
+    xp -= characterXpTarget(level);
+    level += 1;
+    levelUps += 1;
+  }
+  if (level >= 25) xp = 0;
+
+  let weaponLevel = progress.weaponLevel;
+  let weaponXp = progress.weaponXp + weaponXpGained;
+  let weaponLevelUps = 0;
+  while (weaponLevel < 10 && weaponXp >= weaponXpTarget(weaponLevel)) {
+    weaponXp -= weaponXpTarget(weaponLevel);
+    weaponLevel += 1;
+    weaponLevelUps += 1;
+  }
+  if (weaponLevel >= 10) weaponXp = 0;
+
+  return {
+    progress: {
+      level,
+      xp,
+      weaponLevel,
+      weaponXp,
+      clearedStages: firstClear ? [...progress.clearedStages, stage.id].sort((a, b) => a - b) : progress.clearedStages,
+    },
+    reward: { characterXp: characterXpGained, weaponXp: weaponXpGained, levelUps, weaponLevelUps, firstClear } satisfies BattleReward,
+  };
+}
 
 function emptyProgress(): ProgressState {
   return {
@@ -344,6 +520,12 @@ export function BibleTypingApp() {
       : "seoha";
   });
   const [battleStartIndex, setBattleStartIndex] = useState(0);
+  const [selectedBattleStage, setSelectedBattleStage] = useState(1);
+  const [battleCampaign, setBattleCampaign] = useState<BattleCampaignState>(readBattleCampaign);
+  const [battleEnemyHp, setBattleEnemyHp] = useState(BATTLE_STAGES[0].maxHealth);
+  const [battlePlayerHp, setBattlePlayerHp] = useState(100);
+  const [battleDefeated, setBattleDefeated] = useState(false);
+  const [battleReward, setBattleReward] = useState<BattleReward | null>(null);
   const [battleFeedback, setBattleFeedback] = useState<BattleFeedback | null>(null);
   const [battleEffectsEnabled, setBattleEffectsEnabled] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -359,6 +541,9 @@ export function BibleTypingApp() {
   const sessionResultShownRef = useRef(false);
   const completionLockRef = useRef(false);
   const battleFeedbackIdRef = useRef(0);
+  const battlePlayerHpRef = useRef(100);
+  const battleEnemyHpRef = useRef(BATTLE_STAGES[0].maxHealth);
+  const battleRewardedRef = useRef(false);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("bible-typing-theme");
@@ -388,6 +573,10 @@ export function BibleTypingApp() {
   useEffect(() => {
     window.localStorage.setItem(BATTLE_FIGHTER_STORAGE_KEY, selectedFighterId);
   }, [selectedFighterId]);
+
+  useEffect(() => {
+    window.localStorage.setItem(BATTLE_CAMPAIGN_STORAGE_KEY, JSON.stringify(battleCampaign));
+  }, [battleCampaign]);
 
   useEffect(() => {
     let cancelled = false;
@@ -479,6 +668,10 @@ export function BibleTypingApp() {
   const homeBook = homeUnit ? booksByCode.get(homeUnit.b) : undefined;
   const selectedFighter = BATTLE_FIGHTERS.find((fighter) => fighter.id === selectedFighterId) ?? BATTLE_FIGHTERS[0];
   const selectedFighterNumber = BATTLE_FIGHTERS.findIndex((fighter) => fighter.id === selectedFighter.id) + 1;
+  const fighterCampaign = battleCampaign[selectedFighter.id];
+  const unlockedBattleStage = highestUnlockedStage(fighterCampaign);
+  const activeBattleStage = BATTLE_STAGES[selectedBattleStage - 1] ?? BATTLE_STAGES[0];
+  const battlePlayerMaxHp = 100 + ((fighterCampaign.level - 1) * 7) + ((fighterCampaign.weaponLevel - 1) * 3);
   const battleStartUnit = bible?.units[battleStartIndex];
   const battleStartBook = battleStartUnit ? booksByCode.get(battleStartUnit.b) : undefined;
   const elapsedSeconds = startedAt ? Math.max(0.1, (clock - startedAt) / 1000) : 0;
@@ -503,14 +696,11 @@ export function BibleTypingApp() {
       currentCombo = typed[index] === currentUnit.t[index] ? currentCombo + 1 : 0;
     }
   }
-  const battleCorrectTyped = currentUnit
-    ? Array.from(typed).reduce((sum, character, index) => sum + (character === currentUnit.t[index] ? 1 : 0), 0)
-    : 0;
-  const battleHealth = result || !currentUnit
+  const battleHealth = result
     ? 0
-    : Math.max(0, Math.round(100 - ((battleCorrectTyped / Math.max(1, currentUnit.t.length)) * 100)));
+    : Math.max(0, Math.round((battleEnemyHp / Math.max(1, activeBattleStage.maxHealth)) * 100));
   const battleScore = Math.max(0, (liveCorrectKeystrokes * 120) + (currentCombo * 25) - (errors * 80));
-  const battlePower = currentCombo >= 20 ? "MAX" : currentCombo >= 8 ? "강화" : "충전";
+  const battlePower = currentCombo >= 20 ? "MAX" : currentCombo >= 8 ? "강화" : `무기 ${fighterCampaign.weaponLevel}`;
 
   const bookProgress = useMemo(() => {
     const map = new Map<string, { completed: number; percent: number }>();
@@ -563,8 +753,30 @@ export function BibleTypingApp() {
   }, [bible]);
 
   const startSelectedBattle = useCallback(() => {
-    openPractice(battleStartIndex, true, "battle");
-  }, [battleStartIndex, openPractice]);
+    setSelectedBattleStage(highestUnlockedStage(battleCampaign[selectedFighterId]));
+    setView("battle-map");
+  }, [battleCampaign, selectedFighterId]);
+
+  const startBattleStage = useCallback((stageNumber: number) => {
+    if (!bible || stageNumber < 1 || stageNumber > unlockedBattleStage) return;
+    const stage = BATTLE_STAGES[stageNumber - 1];
+    const verseIndex = (battleStartIndex + ((stageNumber - 1) * 37)) % bible.units.length;
+    setSelectedBattleStage(stageNumber);
+    setBattleEnemyHp(stage.maxHealth);
+    setBattlePlayerHp(battlePlayerMaxHp);
+    setBattleDefeated(false);
+    setBattleReward(null);
+    battleEnemyHpRef.current = stage.maxHealth;
+    battlePlayerHpRef.current = battlePlayerMaxHp;
+    battleRewardedRef.current = false;
+    openPractice(verseIndex, true, "battle");
+  }, [battlePlayerMaxHp, battleStartIndex, bible, openPractice, unlockedBattleStage]);
+
+  const openBattleMap = useCallback(() => {
+    setBattleDefeated(false);
+    setBattleFeedback(null);
+    setView("battle-map");
+  }, []);
 
   const continuePractice = useCallback((index: number) => {
     openPractice(index, false);
@@ -654,8 +866,19 @@ export function BibleTypingApp() {
     if (!shouldShowResult) continuePractice(nextIndex);
   }, [bible, completedSet, continuePractice, currentIndex, currentUnit, result]);
 
+  useEffect(() => {
+    if (!result || practiceMode !== "battle" || battleRewardedRef.current) return;
+    battleRewardedRef.current = true;
+    const firstClear = !fighterCampaign.clearedStages.includes(activeBattleStage.id);
+    const outcome = grantCampaignRewards(fighterCampaign, activeBattleStage, firstClear);
+    setBattleCampaign((previous) => ({ ...previous, [selectedFighter.id]: outcome.progress }));
+    setBattleReward(outcome.reward);
+    setBattleEnemyHp(0);
+    battleEnemyHpRef.current = 0;
+  }, [activeBattleStage, fighterCampaign, practiceMode, result, selectedFighter.id]);
+
   const applyTypedValue = useCallback((value: string, baseline: string) => {
-    if (!currentUnit || result) return;
+    if (!currentUnit || result || battleDefeated) return;
     const nextValue = value.slice(0, currentUnit.t.length);
     let start = startedAtRef.current;
     if (!start && nextValue.length > 0) {
@@ -668,13 +891,17 @@ export function BibleTypingApp() {
     let nextKeystrokes = keystrokesRef.current;
     let nextErrors = errorsRef.current;
     let newestFeedback: "hit" | "miss" | null = null;
+    let correctAdded = 0;
+    let errorsAdded = 0;
     if (nextValue.length > baseline.length) {
       for (let index = baseline.length; index < nextValue.length; index += 1) {
         nextKeystrokes += 1;
         if (nextValue[index] !== currentUnit.t[index]) {
           nextErrors += 1;
+          errorsAdded += 1;
           newestFeedback = "miss";
         } else {
+          correctAdded += 1;
           newestFeedback = "hit";
         }
       }
@@ -684,6 +911,25 @@ export function BibleTypingApp() {
       setErrors(nextErrors);
 
       if (practiceMode === "battle" && newestFeedback) {
+        if (correctAdded > 0) {
+          const damagePerCharacter = Math.max(
+            1,
+            Math.ceil(activeBattleStage.maxHealth / Math.max(1, currentUnit.t.length))
+              + Math.floor(fighterCampaign.level / 6)
+              + fighterCampaign.weaponLevel,
+          );
+          const enemyHp = Math.max(0, battleEnemyHpRef.current - (correctAdded * damagePerCharacter));
+          battleEnemyHpRef.current = enemyHp;
+          setBattleEnemyHp(enemyHp);
+        }
+        if (errorsAdded > 0) {
+          const armorReduction = Math.floor((fighterCampaign.level - 1) / 7) + Math.floor((fighterCampaign.weaponLevel - 1) / 3);
+          const receivedDamage = Math.max(2, activeBattleStage.missDamage - armorReduction) * errorsAdded;
+          const playerHp = Math.max(0, battlePlayerHpRef.current - receivedDamage);
+          battlePlayerHpRef.current = playerHp;
+          setBattlePlayerHp(playerHp);
+          if (playerHp === 0) setBattleDefeated(true);
+        }
         let nextCombo = 0;
         for (let index = 0; index < nextValue.length; index += 1) {
           nextCombo = nextValue[index] === currentUnit.t[index] ? nextCombo + 1 : 0;
@@ -698,10 +944,10 @@ export function BibleTypingApp() {
     }
 
     setTyped(nextValue);
-    if (start && nextValue.length === currentUnit.t.length) {
+    if (start && nextValue.length === currentUnit.t.length && battlePlayerHpRef.current > 0) {
       finishPractice(nextKeystrokes, nextErrors, start);
     }
-  }, [currentUnit, finishPractice, practiceMode, result]);
+  }, [activeBattleStage, battleDefeated, currentUnit, fighterCampaign.level, fighterCampaign.weaponLevel, finishPractice, practiceMode, result]);
 
   function handleInput(event: ChangeEvent<HTMLTextAreaElement>) {
     const value = event.target.value;
@@ -734,22 +980,41 @@ export function BibleTypingApp() {
     if (index !== undefined) continuePractice(index);
   }
 
+  function continueBattleCampaign() {
+    if (activeBattleStage.id >= 25) openBattleMap();
+    else startBattleStage(activeBattleStage.id + 1);
+  }
+
   useEffect(() => {
-    if (visualTheme !== "type-console" && view !== "battle-select" && !(practiceMode === "battle" && view === "practice")) return;
+    if (visualTheme !== "type-console" && view !== "battle-select" && view !== "battle-map" && !(practiceMode === "battle" && view === "practice")) return;
 
     function handleConsoleShortcut(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       const isInteractive = target?.matches("input, textarea, select, button, a, [contenteditable='true']") ?? false;
 
-      if (event.key === "Escape" && (view === "practice" || view === "battle-select")) {
+      if (event.key === "Escape" && (view === "practice" || view === "battle-select" || view === "battle-map")) {
         event.preventDefault();
-        setView("home");
+        if (view === "practice" && practiceMode === "battle") openBattleMap();
+        else if (view === "battle-map") setView("battle-select");
+        else setView("home");
         return;
       }
 
       if (view === "battle-select" && event.key === "Enter" && !isInteractive) {
         event.preventDefault();
         startSelectedBattle();
+        return;
+      }
+
+      if (view === "battle-map" && !isInteractive) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          startBattleStage(selectedBattleStage);
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          const direction = event.key === "ArrowRight" ? 1 : -1;
+          setSelectedBattleStage((stage) => Math.max(1, Math.min(unlockedBattleStage, stage + direction)));
+        }
         return;
       }
 
@@ -772,7 +1037,7 @@ export function BibleTypingApp() {
 
     window.addEventListener("keydown", handleConsoleShortcut);
     return () => window.removeEventListener("keydown", handleConsoleShortcut);
-  }, [beginBattle, beginPractice, bible, currentIndex, practiceMode, progress.currentIndex, startSelectedBattle, visualTheme, view]);
+  }, [beginBattle, beginPractice, bible, currentIndex, openBattleMap, practiceMode, progress.currentIndex, selectedBattleStage, startBattleStage, startSelectedBattle, unlockedBattleStage, visualTheme, view]);
 
   const achievements = [
     { title: "첫 문장", description: "첫 구절을 완주했어요", unlocked: completedVerses >= 1, mark: "01" },
@@ -812,7 +1077,7 @@ export function BibleTypingApp() {
   ];
 
   return (
-    <div className={`app-frame app-frame--${view} ${view === "practice" || view === "battle-select" ? "app-frame--practice" : ""} visual-theme--${visualTheme}`}>
+    <div className={`app-frame app-frame--${view} ${view === "practice" || view === "battle-select" || view === "battle-map" ? "app-frame--practice" : ""} visual-theme--${visualTheme}`}>
       <aside className="sidebar">
         <button className="brand" onClick={() => setView("home")} aria-label="말씀타자 홈">
           <span className="brand__wordmark">말씀타자</span>
@@ -846,7 +1111,7 @@ export function BibleTypingApp() {
       </aside>
 
       <div className="workspace">
-        {visualTheme === "type-console" && view !== "practice" && view !== "battle-select" && (
+        {visualTheme === "type-console" && view !== "practice" && view !== "battle-select" && view !== "battle-map" && (
           <header className="console-topbar">
             <button className="console-wordmark" onClick={() => setView("home")} aria-label="말씀타자 홈">말씀타자</button>
             <nav className="console-topbar__nav" aria-label="활자 콘솔 주요 메뉴">
@@ -1064,7 +1329,7 @@ export function BibleTypingApp() {
                     </div>
                     <button className="fighter-select__start" onClick={startSelectedBattle} aria-keyshortcuts="Enter">
                       <span>[ ENTER ]</span>
-                      이 전투원으로 시작
+                      이 전투원으로 작전 선택
                       <ArrowRightIcon size={22} weight="bold" aria-hidden="true" />
                     </button>
                   </div>
@@ -1098,10 +1363,122 @@ export function BibleTypingApp() {
                       <span className="fighter-select__roster-copy">
                         <small>{`${index + 1}`.padStart(2, "0")} / {fighter.role}</small>
                         <strong>{fighter.name}</strong>
-                        <em>{fighter.title}</em>
+                        <em>LV.{battleCampaign[fighter.id].level} · 무기 {battleCampaign[fighter.id].weaponLevel}</em>
                       </span>
                     </button>
                   ))}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {view === "battle-map" && (
+            <div className="page page--battle-map">
+              <section
+                className="campaign-map"
+                style={{ "--fighter-accent": selectedFighter.accent } as CSSProperties}
+                aria-labelledby="campaign-map-title"
+              >
+                <header className="campaign-map__header">
+                  <button onClick={() => setView("battle-select")} aria-keyshortcuts="Escape">[ ESC ] 전투원 변경</button>
+                  <div>
+                    <span>25 STAGE CAMPAIGN</span>
+                    <strong>{selectedFighter.name} · {selectedFighter.weapon}</strong>
+                  </div>
+                  <p>완료 <strong>{fighterCampaign.clearedStages.length}</strong> / 25</p>
+                </header>
+
+                <div className="campaign-map__body">
+                  <div className="campaign-map__route">
+                    <div className="campaign-map__intro">
+                      <span>WORD BATTLE / OPERATION MAP</span>
+                      <h1 id="campaign-map-title">마지막 왕좌까지<br />25번의 전투</h1>
+                      <p>말씀을 정확히 입력해 적을 밀어내고, 전투원과 무기를 성장시키세요.</p>
+                    </div>
+
+                    <div className="campaign-map__acts">
+                      {BATTLE_REGIONS.map((region, actIndex) => (
+                        <section className="campaign-act" key={region} aria-labelledby={`campaign-act-${actIndex + 1}`}>
+                          <header>
+                            <span>ACT {`${actIndex + 1}`.padStart(2, "0")}</span>
+                            <h2 id={`campaign-act-${actIndex + 1}`}>{region}</h2>
+                          </header>
+                          <ol>
+                            {BATTLE_STAGES.slice(actIndex * 5, (actIndex + 1) * 5).map((stage) => {
+                              const isCleared = fighterCampaign.clearedStages.includes(stage.id);
+                              const isUnlocked = stage.id <= unlockedBattleStage;
+                              const isSelected = stage.id === activeBattleStage.id;
+                              return (
+                                <li key={stage.id}>
+                                  <button
+                                    type="button"
+                                    className={`${isCleared ? "is-cleared" : ""} ${isSelected ? "is-selected" : ""} ${stage.boss ? "is-boss" : ""}`}
+                                    onClick={() => setSelectedBattleStage(stage.id)}
+                                    disabled={!isUnlocked}
+                                    aria-current={isSelected ? "step" : undefined}
+                                    aria-label={`${stage.id}단계 ${stage.enemy}${isCleared ? ", 완료" : isUnlocked ? ", 도전 가능" : ", 잠김"}`}
+                                  >
+                                    <span>{`${stage.id}`.padStart(2, "0")}</span>
+                                    <small>{isCleared ? "CLEAR" : isUnlocked ? stage.boss ? "BOSS" : "OPEN" : "LOCK"}</small>
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ol>
+                        </section>
+                      ))}
+                    </div>
+                  </div>
+
+                  <aside className="campaign-brief" aria-live="polite">
+                    <div className="campaign-brief__stage">
+                      <span>STAGE {`${activeBattleStage.id}`.padStart(2, "0")} / 25 · ACT {`${activeBattleStage.act}`.padStart(2, "0")}</span>
+                      <strong>{activeBattleStage.region}</strong>
+                    </div>
+                    <div className={`campaign-brief__enemy ${activeBattleStage.id === 25 ? "is-final" : ""}`}>
+                      <Image
+                        key={activeBattleStage.asset}
+                        src={activeBattleStage.asset}
+                        width={activeBattleStage.width}
+                        height={activeBattleStage.height}
+                        sizes="(max-width: 820px) 60vw, 32vw"
+                        priority
+                        alt={`${activeBattleStage.enemy} 전신`}
+                      />
+                      <span>ENEMY POWER {formatNumber(activeBattleStage.maxHealth)}</span>
+                    </div>
+                    <div className="campaign-brief__copy">
+                      <span>{activeBattleStage.boss ? activeBattleStage.id === 25 ? "FINAL BOSS" : "REGION BOSS" : "ENCOUNTER"}</span>
+                      <h2>{activeBattleStage.enemy}</h2>
+                      <p>{activeBattleStage.title}</p>
+                    </div>
+
+                    <div className="campaign-growth">
+                      <div>
+                        <span>전투원</span>
+                        <strong>LV.{fighterCampaign.level}</strong>
+                        <div><i style={{ width: `${fighterCampaign.level >= 25 ? 100 : (fighterCampaign.xp / characterXpTarget(fighterCampaign.level)) * 100}%` }} /></div>
+                        <small>{fighterCampaign.level >= 25 ? "MAX" : `${fighterCampaign.xp} / ${characterXpTarget(fighterCampaign.level)} XP`}</small>
+                      </div>
+                      <div>
+                        <span>{selectedFighter.weapon}</span>
+                        <strong>LV.{fighterCampaign.weaponLevel}</strong>
+                        <div><i style={{ width: `${fighterCampaign.weaponLevel >= 10 ? 100 : (fighterCampaign.weaponXp / weaponXpTarget(fighterCampaign.weaponLevel)) * 100}%` }} /></div>
+                        <small>{fighterCampaign.weaponLevel >= 10 ? "MAX" : `${fighterCampaign.weaponXp} / ${weaponXpTarget(fighterCampaign.weaponLevel)} XP`}</small>
+                      </div>
+                    </div>
+
+                    <div className="campaign-brief__reward">
+                      <span>첫 승리 보상</span>
+                      <strong>전투원 +{activeBattleStage.characterXp} XP</strong>
+                      <strong>무기 +{activeBattleStage.weaponXp} XP</strong>
+                    </div>
+                    <button className="campaign-brief__start" onClick={() => startBattleStage(activeBattleStage.id)} aria-keyshortcuts="Enter">
+                      <span>[ ENTER ]</span>
+                      {activeBattleStage.id === 25 ? "최종 결전 시작" : `${activeBattleStage.id}단계 시작`}
+                      <ArrowRightIcon size={22} weight="bold" aria-hidden="true" />
+                    </button>
+                  </aside>
                 </div>
               </section>
             </div>
@@ -1146,12 +1523,12 @@ export function BibleTypingApp() {
                   style={{ "--fighter-accent": selectedFighter.accent } as CSSProperties}
                 >
                   <header className="battle-header">
-                    <button onClick={() => setView("home")} aria-label="말씀 전투를 닫고 홈으로" aria-keyshortcuts="Escape">[ ESC ] 나가기</button>
+                    <button onClick={openBattleMap} aria-label="전투를 닫고 작전 지도로" aria-keyshortcuts="Escape">[ ESC ] 작전 지도</button>
                     <div>
-                      <span>{selectedFighter.name} / {selectedFighter.role}</span>
+                      <span>STAGE {`${activeBattleStage.id}`.padStart(2, "0")} / 25 · {selectedFighter.name} LV.{fighterCampaign.level}</span>
                       <h1>{referenceFor(currentUnit, currentBook)}</h1>
                     </div>
-                    <p>오늘 <strong>{todayCompleted}/{progress.dailyGoal}</strong>절</p>
+                    <p>{selectedFighter.weapon} <strong>LV.{fighterCampaign.weaponLevel}</strong></p>
                     <button
                       className="battle-fx-toggle"
                       onClick={() => {
@@ -1164,15 +1541,15 @@ export function BibleTypingApp() {
                     </button>
                   </header>
 
-                  {!result ? (
+                  {!result && !battleDefeated ? (
                     <div className="battle-shell">
-                      <section className="battle-arena" aria-label={`어둠의 시험 체력 ${battleHealth}%`}>
+                      <section className="battle-arena" aria-label={`${activeBattleStage.enemy} 체력 ${battleHealth}%`}>
                         <div className="battle-boss-bar">
                           <div>
-                            <span>어둠의 시험</span>
-                            <strong>{battleHealth}<small>%</small></strong>
+                            <span>{activeBattleStage.enemy}</span>
+                            <strong>{formatNumber(battleEnemyHp)}<small> / {formatNumber(activeBattleStage.maxHealth)}</small></strong>
                           </div>
-                          <div className="battle-health-track" role="progressbar" aria-label="마귀 남은 체력" aria-valuemin={0} aria-valuemax={100} aria-valuenow={battleHealth}>
+                          <div className="battle-health-track" role="progressbar" aria-label={`${activeBattleStage.enemy} 남은 체력`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={battleHealth}>
                             <i style={{ width: `${battleHealth}%` }} />
                           </div>
                         </div>
@@ -1202,17 +1579,21 @@ export function BibleTypingApp() {
                             <strong>{formatNumber(battleScore)}</strong>
                             <small>{battlePower}</small>
                             <div><b>{currentCombo}</b> COMBO</div>
+                            <div className="battle-player-health">
+                              <span>HP {battlePlayerHp} / {battlePlayerMaxHp}</span>
+                              <i><b style={{ width: `${(battlePlayerHp / battlePlayerMaxHp) * 100}%` }} /></i>
+                            </div>
                           </aside>
 
                           <div className="battle-enemy-wrap" key={`enemy-${battleFeedback?.id ?? 0}`}>
                             <span>WEAK POINT</span>
                             <Image
                               className="battle-enemy"
-                              src="/game-assets/word-battle-enemy.png"
-                              width={720}
-                              height={576}
+                              src={activeBattleStage.asset}
+                              width={activeBattleStage.width}
+                              height={activeBattleStage.height}
                               priority
-                              alt="말씀의 힘에 맞서는 돌 마귀"
+                              alt={`말씀의 힘에 맞서는 ${activeBattleStage.enemy}`}
                             />
                           </div>
 
@@ -1294,15 +1675,28 @@ export function BibleTypingApp() {
                             spellCheck={false}
                             rows={1}
                           />
-                          <button onClick={goRandom}>다른 구절</button>
+                          <button onClick={openBattleMap}>작전 지도</button>
                         </div>
                       </section>
                     </div>
-                  ) : (
+                  ) : battleDefeated ? (
+                    <div className="battle-defeat" aria-live="assertive">
+                      <div className="battle-defeat__visual" aria-hidden="true">
+                        <Image src={activeBattleStage.asset} width={activeBattleStage.width} height={activeBattleStage.height} alt="" />
+                      </div>
+                      <span>STAGE {`${activeBattleStage.id}`.padStart(2, "0")} · {activeBattleStage.enemy}</span>
+                      <h2>전열을 다시 가다듬으세요.</h2>
+                      <p>오타 피해로 체력이 모두 소진됐습니다.<br />이 단계에서는 오타 한 글자마다 최대 {activeBattleStage.missDamage}의 피해를 받습니다.</p>
+                      <div className="battle-defeat__actions">
+                        <button onClick={() => startBattleStage(activeBattleStage.id)}>다시 도전</button>
+                        <button onClick={openBattleMap}>작전 지도</button>
+                      </div>
+                    </div>
+                  ) : result ? (
                     <div className="battle-victory" aria-live="polite">
                       <div className="battle-victory__visual" aria-hidden="true">
                         {battleEffectsEnabled && <Image className="battle-victory__burst" src="/game-assets/word-impact-burst.webp" width={560} height={543} alt="" />}
-                        <Image className="battle-victory__enemy" src="/game-assets/word-battle-enemy.png" width={720} height={576} alt="" />
+                        <Image className="battle-victory__enemy" src={activeBattleStage.asset} width={activeBattleStage.width} height={activeBattleStage.height} alt="" />
                         <Image
                           className="battle-victory__fighter"
                           src={selectedFighter.asset}
@@ -1311,20 +1705,30 @@ export function BibleTypingApp() {
                           alt=""
                         />
                       </div>
-                      <span>{selectedFighter.name} 승리 / {referenceFor(currentUnit, currentBook)}</span>
-                      <h2>어둠을 물리쳤습니다.</h2>
+                      <span>STAGE {`${activeBattleStage.id}`.padStart(2, "0")} · {selectedFighter.name} 승리</span>
+                      <h2>{activeBattleStage.id === 25 ? "사탄을 물리쳤습니다." : `${activeBattleStage.enemy}을 물리쳤습니다.`}</h2>
                       <p>“{currentUnit.t}”<br /><small>{selectedFighter.motto}</small></p>
                       <div className="battle-victory__stats">
                         <div><strong>{formatNumber(battleScore)}</strong><span>전투 점수</span></div>
                         <div><strong>{result.cpm}</strong><span>타/분</span></div>
                         <div><strong>{result.accuracy.toFixed(1)}</strong><span>정확도 %</span></div>
                       </div>
+                      {battleReward && (
+                        <div className="battle-victory__reward">
+                          <span>{battleReward.firstClear ? "첫 승리 보상" : "재도전 보상"}</span>
+                          <strong>전투원 +{battleReward.characterXp} XP</strong>
+                          <strong>무기 +{battleReward.weaponXp} XP</strong>
+                          {(battleReward.levelUps > 0 || battleReward.weaponLevelUps > 0) && (
+                            <em>{battleReward.levelUps > 0 ? `전투원 LV +${battleReward.levelUps}` : ""}{battleReward.levelUps > 0 && battleReward.weaponLevelUps > 0 ? " · " : ""}{battleReward.weaponLevelUps > 0 ? `무기 LV +${battleReward.weaponLevelUps}` : ""}</em>
+                          )}
+                        </div>
+                      )}
                       <div className="battle-victory__actions">
-                        <button onClick={goToNext}>다음 전투</button>
-                        <button onClick={resetPractice}>한 번 더</button>
+                        <button onClick={continueBattleCampaign}>{activeBattleStage.id === 25 ? "작전 지도" : "다음 단계"}</button>
+                        <button onClick={() => startBattleStage(activeBattleStage.id)}>한 번 더</button>
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </section>
               ) : visualTheme === "type-console" ? (
                 <section className={`console-practice ${result ? "is-complete" : ""}`}>
