@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import Image from "next/image";
+import NextImage, { type ImageProps } from "next/image";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -144,6 +144,10 @@ type WordRange = {
   start: number;
   end: number;
 };
+
+function Image(props: ImageProps) {
+  return <NextImage {...props} unoptimized />;
+}
 
 const STORAGE_KEY = "bible-typing-progress-v1";
 const VISUAL_THEME_STORAGE_KEY = "bible-typing-visual-theme";

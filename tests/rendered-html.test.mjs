@@ -5,15 +5,26 @@ import test from "node:test";
 const appSourceUrl = new URL("../app/BibleTypingApp.tsx", import.meta.url);
 const cssSourceUrl = new URL("../app/globals.css", import.meta.url);
 const pageSourceUrl = new URL("../app/page.tsx", import.meta.url);
+const nextConfigSourceUrl = new URL("../next.config.ts", import.meta.url);
 
 async function readSources() {
-  const [app, css, page] = await Promise.all([
+  const [app, css, page, nextConfig] = await Promise.all([
     readFile(appSourceUrl, "utf8"),
     readFile(cssSourceUrl, "utf8"),
     readFile(pageSourceUrl, "utf8"),
+    readFile(nextConfigSourceUrl, "utf8"),
   ]);
-  return { app, css, page };
+  return { app, css, page, nextConfig };
 }
+
+test("serves game artwork without the unavailable production image optimizer", async () => {
+  const { app, nextConfig } = await readSources();
+
+  assert.match(nextConfig, /images:\s*\{/);
+  assert.match(nextConfig, /unoptimized:\s*true/);
+  assert.match(app, /import NextImage, \{ type ImageProps \} from "next\/image"/);
+  assert.match(app, /<NextImage \{\.\.\.props\} unoptimized \/>/);
+});
 
 test("adds the type-console theme without replacing the classic theme", async () => {
   const { app, page } = await readSources();
