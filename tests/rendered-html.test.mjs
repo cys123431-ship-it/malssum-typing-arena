@@ -67,3 +67,33 @@ test("preserves keyboard navigation and does not reserve Tab", async () => {
   assert.doesNotMatch(app, /event\.key === "Tab"/);
   assert.match(app, /inputRef\.current\?\.focus\(\)/);
 });
+
+test("adds the optional Bible word battle without replacing standard practice", async () => {
+  const { app, css } = await readSources();
+
+  assert.match(app, /type PracticeMode = "standard" \| "battle"/);
+  assert.match(app, /const beginBattle = useCallback/);
+  assert.match(app, /practiceMode === "battle"/);
+  assert.match(app, />말씀 전투</);
+  assert.match(app, /battleHealth/);
+  assert.match(app, /battleScore/);
+  assert.match(app, /word-battle-enemy\.png/);
+  assert.match(app, /word-impact-burst\.webp/);
+  assert.match(app, /word-projectile-streak\.webp/);
+  assert.match(css, /\.battle-practice/);
+  assert.match(css, /\.battle-health-track/);
+  assert.match(css, /\.battle-hit-fx/);
+  assert.match(css, /\.battle-miss-flash/);
+});
+
+test("keeps battle typing connected to the existing accuracy and completion logic", async () => {
+  const { app } = await readSources();
+
+  assert.match(app, /nextErrors \+= 1/);
+  assert.match(app, /errorsRef\.current = nextErrors/);
+  assert.match(app, /setTyped\(nextValue\)/);
+  assert.match(app, /currentCombo = typed\[index\] === currentUnit\.t\[index\] \? currentCombo \+ 1 : 0/);
+  assert.match(app, /const cpm = Math\.round\(\(correctKeystrokes \/ durationSeconds\) \* 60\)/);
+  assert.match(app, /finishPractice\(nextKeystrokes, nextErrors, start\)/);
+  assert.doesNotMatch(app, /event\.key === "Tab"/);
+});

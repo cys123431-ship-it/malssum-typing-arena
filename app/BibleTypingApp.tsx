@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import Image from "next/image";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -20,6 +21,13 @@ import {
 
 type View = "home" | "library" | "practice" | "progress";
 type VisualTheme = "classic" | "type-console";
+type PracticeMode = "standard" | "battle";
+
+type BattleFeedback = {
+  id: number;
+  kind: "hit" | "miss";
+  strength: 1 | 2 | 3;
+};
 
 type BibleUnit = {
   id: string;
@@ -210,6 +218,9 @@ export function BibleTypingApp() {
   const [libraryTestament, setLibraryTestament] = useState<"전체" | "구약" | "신약">("전체");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [visualTheme, setVisualTheme] = useState<VisualTheme>("classic");
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>("standard");
+  const [battleFeedback, setBattleFeedback] = useState<BattleFeedback | null>(null);
+  const [battleEffectsEnabled, setBattleEffectsEnabled] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState("기기 저장");
   const [loadingError, setLoadingError] = useState("");
@@ -222,6 +233,7 @@ export function BibleTypingApp() {
   const compositionBaseRef = useRef("");
   const sessionResultShownRef = useRef(false);
   const completionLockRef = useRef(false);
+  const battleFeedbackIdRef = useRef(0);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("bible-typing-theme");
@@ -358,6 +370,14 @@ export function BibleTypingApp() {
       currentCombo = typed[index] === currentUnit.t[index] ? currentCombo + 1 : 0;
     }
   }
+  const battleCorrectTyped = currentUnit
+    ? Array.from(typed).reduce((sum, character, index) => sum + (character === currentUnit.t[index] ? 1 : 0), 0)
+    : 0;
+  const battleHealth = result || !currentUnit
+    ? 0
+    : Math.max(0, Math.round(100 - ((battleCorrectTyped / Math.max(1, currentUnit.t.length)) * 100)));
+  const battleScore = Math.max(0, (liveCorrectKeystrokes * 120) + (currentCombo * 25) - (errors * 80));
+  const battlePower = currentCombo >= 20 ? "MAX" : currentCombo >= 8 ? "강화" : "충전";
 
   const bookProgress = useMemo(() => {
     const map = new Map<string, { completed: number; percent: number }>();
@@ -378,6 +398,7 @@ export function BibleTypingApp() {
     setKeystrokes(0);
     setErrors(0);
     setResult(null);
+    setBattleFeedback(null);
     startedAtRef.current = null;
     keystrokesRef.current = 0;
     errorsRef.current = 0;
@@ -387,10 +408,11 @@ export function BibleTypingApp() {
     window.setTimeout(() => inputRef.current?.focus(), 40);
   }, []);
 
-  const openPractice = useCallback((index: number, startsNewSession: boolean) => {
+  const openPractice = useCallback((index: number, startsNewSession: boolean, mode?: PracticeMode) => {
     if (!bible) return;
     const safeIndex = Math.max(0, Math.min(index, bible.units.length - 1));
     if (startsNewSession) sessionResultShownRef.current = false;
+    if (mode) setPracticeMode(mode);
     setCurrentIndex(safeIndex);
     setProgress((previous) => ({ ...previous, currentIndex: safeIndex }));
     setView("practice");
@@ -398,7 +420,11 @@ export function BibleTypingApp() {
   }, [bible, resetPractice]);
 
   const beginPractice = useCallback((index: number) => {
-    openPractice(index, true);
+    openPractice(index, true, "standard");
+  }, [openPractice]);
+
+  const beginBattle = useCallback((index: number) => {
+    openPractice(index, true, "battle");
   }, [openPractice]);
 
   const continuePractice = useCallback((index: number) => {
@@ -502,22 +528,41 @@ export function BibleTypingApp() {
 
     let nextKeystrokes = keystrokesRef.current;
     let nextErrors = errorsRef.current;
+    let newestFeedback: "hit" | "miss" | null = null;
     if (nextValue.length > baseline.length) {
       for (let index = baseline.length; index < nextValue.length; index += 1) {
         nextKeystrokes += 1;
-        if (nextValue[index] !== currentUnit.t[index]) nextErrors += 1;
+        if (nextValue[index] !== currentUnit.t[index]) {
+          nextErrors += 1;
+          newestFeedback = "miss";
+        } else {
+          newestFeedback = "hit";
+        }
       }
       keystrokesRef.current = nextKeystrokes;
       errorsRef.current = nextErrors;
       setKeystrokes(nextKeystrokes);
       setErrors(nextErrors);
+
+      if (practiceMode === "battle" && newestFeedback) {
+        let nextCombo = 0;
+        for (let index = 0; index < nextValue.length; index += 1) {
+          nextCombo = nextValue[index] === currentUnit.t[index] ? nextCombo + 1 : 0;
+        }
+        battleFeedbackIdRef.current += 1;
+        setBattleFeedback({
+          id: battleFeedbackIdRef.current,
+          kind: newestFeedback,
+          strength: nextCombo >= 20 ? 3 : nextCombo >= 8 ? 2 : 1,
+        });
+      }
     }
 
     setTyped(nextValue);
     if (start && nextValue.length === currentUnit.t.length) {
       finishPractice(nextKeystrokes, nextErrors, start);
     }
-  }, [currentUnit, finishPractice, result]);
+  }, [currentUnit, finishPractice, practiceMode, result]);
 
   function handleInput(event: ChangeEvent<HTMLTextAreaElement>) {
     const value = event.target.value;
@@ -551,7 +596,7 @@ export function BibleTypingApp() {
   }
 
   useEffect(() => {
-    if (visualTheme !== "type-console") return;
+    if (visualTheme !== "type-console" && !(practiceMode === "battle" && view === "practice")) return;
 
     function handleConsoleShortcut(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
@@ -563,6 +608,7 @@ export function BibleTypingApp() {
         return;
       }
 
+      if (visualTheme !== "type-console") return;
       if (view !== "home" || isInteractive || event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key === "Enter") {
         event.preventDefault();
@@ -573,12 +619,15 @@ export function BibleTypingApp() {
         let index = Math.floor(Math.random() * bible.units.length);
         if (index === currentIndex) index = (index + 1) % bible.units.length;
         beginPractice(index);
+      } else if (event.key.toLowerCase() === "b") {
+        event.preventDefault();
+        beginBattle(progress.currentIndex);
       }
     }
 
     window.addEventListener("keydown", handleConsoleShortcut);
     return () => window.removeEventListener("keydown", handleConsoleShortcut);
-  }, [beginPractice, bible, currentIndex, progress.currentIndex, visualTheme, view]);
+  }, [beginBattle, beginPractice, bible, currentIndex, practiceMode, progress.currentIndex, visualTheme, view]);
 
   const achievements = [
     { title: "첫 문장", description: "첫 구절을 완주했어요", unlocked: completedVerses >= 1, mark: "01" },
@@ -770,9 +819,14 @@ export function BibleTypingApp() {
                           <small>[ ENTER ]</small>
                           <strong>이어서 연습</strong>
                         </button>
-                        <button className="console-random-command" onClick={startRandomPractice} aria-keyshortcuts="R">
-                          <b>R</b> 무작위 한 절
-                        </button>
+                        <div className="console-command-secondary">
+                          <button className="console-random-command" onClick={startRandomPractice} aria-keyshortcuts="R">
+                            <b>R</b> 무작위 한 절
+                          </button>
+                          <button className="console-battle-command" onClick={() => beginBattle(progress.currentIndex)} aria-keyshortcuts="B">
+                            <b>B</b> 말씀 전투
+                          </button>
+                        </div>
                       </section>
                     </div>
                     <section className="console-home__ticker" aria-label="연습 요약">
@@ -800,6 +854,7 @@ export function BibleTypingApp() {
                           이어서 연습하기 <ArrowRightIcon size={21} weight="regular" aria-hidden="true" />
                         </button>
                         <button className="home-random" onClick={startRandomPractice}>한 절 무작위</button>
+                        <button className="home-battle" onClick={() => beginBattle(progress.currentIndex)}>말씀 전투</button>
                       </div>
                     </div>
 
@@ -858,7 +913,162 @@ export function BibleTypingApp() {
 
           {view === "practice" && currentUnit && (
             <div className="page page--practice">
-              {visualTheme === "type-console" ? (
+              {practiceMode === "battle" ? (
+                <section className={`battle-practice ${result ? "is-complete" : ""} ${battleFeedback ? `is-${battleFeedback.kind}` : ""}`}>
+                  <header className="battle-header">
+                    <button onClick={() => setView("home")} aria-label="말씀 전투를 닫고 홈으로" aria-keyshortcuts="Escape">[ ESC ] 나가기</button>
+                    <div>
+                      <span>말씀 전투</span>
+                      <h1>{referenceFor(currentUnit, currentBook)}</h1>
+                    </div>
+                    <p>오늘 <strong>{todayCompleted}/{progress.dailyGoal}</strong>절</p>
+                    <button
+                      className="battle-fx-toggle"
+                      onClick={() => {
+                        setBattleEffectsEnabled((enabled) => !enabled);
+                        window.setTimeout(() => inputRef.current?.focus(), 40);
+                      }}
+                      aria-pressed={battleEffectsEnabled}
+                    >
+                      FX {battleEffectsEnabled ? "ON" : "OFF"}
+                    </button>
+                  </header>
+
+                  {!result ? (
+                    <div className="battle-shell">
+                      <section className="battle-arena" aria-label={`어둠의 시험 체력 ${battleHealth}%`}>
+                        <div className="battle-boss-bar">
+                          <div>
+                            <span>어둠의 시험</span>
+                            <strong>{battleHealth}<small>%</small></strong>
+                          </div>
+                          <div className="battle-health-track" role="progressbar" aria-label="마귀 남은 체력" aria-valuemin={0} aria-valuemax={100} aria-valuenow={battleHealth}>
+                            <i style={{ width: `${battleHealth}%` }} />
+                          </div>
+                        </div>
+
+                        <div className="battle-field">
+                          <aside className="battle-power-meter" aria-label="말씀 전투 점수">
+                            <span>말씀의 힘</span>
+                            <strong>{formatNumber(battleScore)}</strong>
+                            <small>{battlePower}</small>
+                            <div><b>{currentCombo}</b> COMBO</div>
+                          </aside>
+
+                          <div className="battle-enemy-wrap" key={`enemy-${battleFeedback?.id ?? 0}`}>
+                            <span>WEAK POINT</span>
+                            <Image
+                              className="battle-enemy"
+                              src="/game-assets/word-battle-enemy.png"
+                              width={720}
+                              height={576}
+                              priority
+                              alt="말씀의 힘에 맞서는 돌 마귀"
+                            />
+                          </div>
+
+                          {battleEffectsEnabled && battleFeedback?.kind === "hit" && (
+                            <div className={`battle-hit-fx is-strength-${battleFeedback.strength}`} key={`hit-${battleFeedback.id}`} aria-hidden="true">
+                              <Image className="battle-projectile" src="/game-assets/word-projectile-streak.webp" width={960} height={167} alt="" />
+                              <Image className="battle-impact" src="/game-assets/word-impact-burst.webp" width={560} height={543} alt="" />
+                            </div>
+                          )}
+                          {battleEffectsEnabled && battleFeedback?.kind === "miss" && <div className="battle-miss-flash" key={`miss-${battleFeedback.id}`} aria-hidden="true" />}
+                        </div>
+                      </section>
+
+                      <section className="battle-type-stage">
+                        <div className="battle-live-stats" aria-live="polite">
+                          <span>콤보 <strong>{currentCombo}</strong></span>
+                          <span>타수 <strong>{liveCpm || 0}</strong></span>
+                          <span>정확도 <strong>{keystrokes ? liveAccuracy.toFixed(0) : 100}%</strong></span>
+                        </div>
+
+                        <div className="battle-word-queue" aria-label={`따라 쓸 구절: ${currentUnit.t}`} aria-live="polite">
+                          {visibleConsoleWords.slice(0, 3).map((word, queueIndex) => {
+                            const cursorOffset = Math.max(0, typed.length - word.start);
+                            return queueIndex === 0 ? (
+                              <div className="battle-current-word" key={`${word.start}-${word.text}`}>
+                                {Array.from(word.text).map((character, offset) => {
+                                  const absoluteIndex = word.start + offset;
+                                  const state = absoluteIndex < typed.length
+                                    ? typed[absoluteIndex] === character ? "is-correct" : "is-wrong"
+                                    : offset === cursorOffset ? "is-current" : "is-upcoming";
+                                  const isLatestHit = absoluteIndex === typed.length - 1 && battleFeedback?.kind === "hit";
+                                  const isLatestMiss = absoluteIndex === typed.length - 1 && battleFeedback?.kind === "miss";
+                                  return (
+                                    <span className={`${state} ${isLatestHit ? "is-latest-hit" : ""} ${isLatestMiss ? "is-latest-miss" : ""}`} key={`${absoluteIndex}-${character}`}>
+                                      {character}
+                                      {battleEffectsEnabled && isLatestHit && (
+                                        <Image
+                                          className="battle-letter-impact"
+                                          key={`letter-hit-${battleFeedback?.id ?? 0}`}
+                                          src="/game-assets/word-impact-burst.webp"
+                                          width={560}
+                                          height={543}
+                                          alt=""
+                                          aria-hidden="true"
+                                        />
+                                      )}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className={`battle-next-word battle-next-word--${queueIndex}`} key={`${word.start}-${word.text}`}>{word.text}</div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="battle-input-bar">
+                          <label className="sr-only" htmlFor="battle-typing-input">말씀을 그대로 입력하세요</label>
+                          <textarea
+                            ref={inputRef}
+                            id="battle-typing-input"
+                            value={typed}
+                            onChange={handleInput}
+                            onCompositionStart={() => {
+                              isComposingRef.current = true;
+                              compositionBaseRef.current = typed;
+                            }}
+                            onCompositionEnd={(event) => {
+                              isComposingRef.current = false;
+                              applyTypedValue(event.currentTarget.value, compositionBaseRef.current);
+                            }}
+                            onPaste={(event) => event.preventDefault()}
+                            placeholder="말씀을 입력해 어둠을 물리치세요"
+                            autoCapitalize="off"
+                            autoCorrect="off"
+                            autoComplete="off"
+                            spellCheck={false}
+                            rows={1}
+                          />
+                          <button onClick={goRandom}>다른 구절</button>
+                        </div>
+                      </section>
+                    </div>
+                  ) : (
+                    <div className="battle-victory" aria-live="polite">
+                      <div className="battle-victory__visual" aria-hidden="true">
+                        {battleEffectsEnabled && <Image className="battle-victory__burst" src="/game-assets/word-impact-burst.webp" width={560} height={543} alt="" />}
+                        <Image className="battle-victory__enemy" src="/game-assets/word-battle-enemy.png" width={720} height={576} alt="" />
+                      </div>
+                      <span>말씀 승리 / {referenceFor(currentUnit, currentBook)}</span>
+                      <h2>어둠을 물리쳤습니다.</h2>
+                      <p>“{currentUnit.t}”</p>
+                      <div className="battle-victory__stats">
+                        <div><strong>{formatNumber(battleScore)}</strong><span>전투 점수</span></div>
+                        <div><strong>{result.cpm}</strong><span>타/분</span></div>
+                        <div><strong>{result.accuracy.toFixed(1)}</strong><span>정확도 %</span></div>
+                      </div>
+                      <div className="battle-victory__actions">
+                        <button onClick={goToNext}>다음 전투</button>
+                        <button onClick={resetPractice}>한 번 더</button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              ) : visualTheme === "type-console" ? (
                 <section className={`console-practice ${result ? "is-complete" : ""}`}>
                   <header className="console-practice__header">
                     <button onClick={() => setView("home")} aria-label="연습을 닫고 홈으로" aria-keyshortcuts="Escape">[ ESC ] 나가기</button>
