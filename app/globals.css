@@ -5551,6 +5551,41 @@ html[data-theme="dark"] .console-live-stats span {
   }
 }
 
+.battle-fighter {
+  animation: battle-depth-idle 2.8s ease-in-out infinite;
+}
+
+.battle-enemy {
+  animation: battle-depth-enemy-idle 2.2s ease-in-out infinite;
+}
+
+.battle-target-lock svg {
+  animation: battle-depth-reticle 4.6s linear infinite;
+}
+
+@keyframes battle-depth-idle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  45% { transform: translateY(-5px) rotate(-0.35deg); }
+  65% { transform: translateY(-2px) rotate(0.2deg); }
+}
+
+@keyframes battle-depth-enemy-idle {
+  0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
+  50% { transform: translateY(-7px) scale(1.025); filter: brightness(1.08); }
+}
+
+@keyframes battle-depth-reticle {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-fighter,
+  .battle-enemy,
+  .battle-target-lock svg {
+    animation: none !important;
+  }
+}
+
 @media (max-width: 360px) {
   .battle-shell {
     grid-template-rows: minmax(270px, 45%) minmax(0, 55%);

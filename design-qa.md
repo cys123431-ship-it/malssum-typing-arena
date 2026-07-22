@@ -130,3 +130,31 @@ Post-deployment viewport status: authenticated capture remains pending.
 - Seven regression tests passed, including six-fighter persistence, battle-select routing, asset wiring, attack animation, mobile roster flow, and Tab-key preservation.
 
 final result: blocked
+
+## 전투 원근감·반동 모션 addendum — 2026-07-22
+
+### 시각 원본과 비교 자료
+
+- 동작·구도 원본: `E:\예시.zip`
+- 대표 원본 프레임: `PS21112700215.jpg`
+- 원본·구현 동일 캔버스 비교: `work/design-comparison-battle.jpg`
+- 구현 캡처: `work/battle-depth-desktop.png`, `work/battle-depth-mobile.png`
+
+### 구현·확인 결과
+
+- 기존 좌우 대치 구도를 폐기하고 먼 중앙의 적, 전경의 후면 전투원, 원근감 있는 성소 전장으로 재구성했다.
+- 6명의 전투원 모두 기존 외형과 무기를 유지한 전투용 후면 3/4 포즈를 연결했다.
+- 평상시 전투원 호흡·무게 이동, 적 부유, 조준점 회전 모션을 추가했다.
+- 정답 입력에는 전투원 반동, 총구 폭발, 원거리 탄도, 적 피격 폭발, 적 흔들림, 카메라 충격을 연결했다.
+- `prefers-reduced-motion`에서는 장식·전투 애니메이션을 제거한다.
+- 공개 Sites 화면에서 데스크톱 전투 구도와 모바일 `390×844`를 직접 캡처해 원본과 비교했다.
+- `390px`에서 `scrollWidth = clientWidth = 390`, `320px`에서 `scrollWidth = clientWidth = 320`으로 가로 스크롤이 없음을 확인했다.
+- 입력창은 전투 시작 직후 활성 상태이며 보스 체력, 플레이어 체력, 콤보, 타수, 정확도, 구절 큐, 작전 지도 동작이 기존 상태와 연결된다.
+
+### 심각도별 미해결 항목
+
+- P0: 없음
+- P1: 없음
+- P2: 없음
+
+final result: passed
