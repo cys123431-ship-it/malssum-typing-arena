@@ -27,9 +27,14 @@ type BattleFighterId = "seoha" | "mira" | "yuna" | "riel" | "hana" | "arin";
 type BattleFighter = {
   id: BattleFighterId;
   name: string;
+  title: string;
   role: string;
   weapon: string;
   tagline: string;
+  story: string;
+  personality: string;
+  traits: [string, string, string];
+  motto: string;
   asset: string;
   width: number;
   height: number;
@@ -113,9 +118,14 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
   {
     id: "seoha",
     name: "서하",
+    title: "잿빛 기록의 배달자",
     role: "선봉",
     weapon: "레일 스태프",
     tagline: "빠르고 균형 잡힌 말씀 사격",
+    story: "말씀이 지워진 마을들을 오가며 마지막 기록을 운반하던 전령. 단 한 줄이라도 다음 사람에게 전해지면 어둠은 완전해질 수 없다는 믿음으로 가장 먼저 전장에 섭니다.",
+    personality: "침착하고 다정한 책임가",
+    traits: ["균형 잡힌 전개", "빠른 기동", "안정적인 연계"],
+    motto: "한 줄을 지키면, 다음 길이 열린다.",
     asset: "/game-assets/fighters/fighter-seoha.webp",
     width: 800,
     height: 1200,
@@ -124,9 +134,14 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
   {
     id: "mira",
     name: "미라",
+    title: "새벽별의 관측자",
     role: "정밀",
     weapon: "초승달 활",
     tagline: "정확한 한 글자를 멀리 보냅니다",
+    story: "침묵의 안개 속에서도 별빛처럼 남은 말씀의 흔적을 찾아내는 관측자. 서두르지 않고 정확한 한 글자를 골라, 멀리 숨어 있는 어둠의 핵을 꿰뚫습니다.",
+    personality: "조용하고 섬세한 완벽주의자",
+    traits: ["정확한 조준", "차분한 집중", "원거리 대응"],
+    motto: "보이지 않아도, 말씀은 방향을 남긴다.",
     asset: "/game-assets/fighters/fighter-mira.webp",
     width: 900,
     height: 1200,
@@ -135,9 +150,14 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
   {
     id: "yuna",
     name: "유나",
+    title: "깨어진 종의 대장장이",
     role: "중화력",
     weapon: "공명 포",
     tagline: "묵직한 타격으로 어둠을 흔듭니다",
+    story: "마을 예배당의 종이 부서진 날, 남은 금속과 말씀의 울림으로 공명 포를 만든 대장장이. 밝은 웃음 뒤에 강한 보호 본능을 품고 동료 앞을 든든히 지킵니다.",
+    personality: "호쾌하고 따뜻한 보호자",
+    traits: ["묵직한 타격", "강한 존재감", "든든한 압박"],
+    motto: "다시 울리면 돼. 더 크게, 더 멀리.",
     asset: "/game-assets/fighters/fighter-yuna.webp",
     width: 800,
     height: 1200,
@@ -146,9 +166,14 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
   {
     id: "riel",
     name: "리엘",
+    title: "금서고의 붉은 필경사",
     role: "관통",
     weapon: "펜 랜스",
     tagline: "문장을 꿰뚫는 날카로운 집중",
+    story: "왜곡된 문장을 바로잡다 추방된 필경사로, 거대한 펜 랜스에 바른 구절을 새겨 싸웁니다. 규칙보다 진실을 먼저 택하며 막힌 문장과 방어선을 단숨에 돌파합니다.",
+    personality: "대담하고 예리한 반골",
+    traits: ["날카로운 관통", "과감한 돌파", "흔들림 없는 판단"],
+    motto: "틀린 문장은, 바른 글로 꿰뚫는다.",
     asset: "/game-assets/fighters/fighter-riel.webp",
     width: 1200,
     height: 800,
@@ -157,9 +182,14 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
   {
     id: "hana",
     name: "하나",
+    title: "푸른 성소의 수호자",
     role: "연타",
     weapon: "쌍 말씀봉",
     tagline: "콤보가 쌓일수록 빛나는 연속타",
+    story: "피난민들이 모인 작은 성소를 지키며 아이들에게 말씀과 호흡을 함께 가르친 수호자. 반복은 지루함이 아니라 마음을 단단하게 만드는 리듬이라고 믿습니다.",
+    personality: "활기차고 긍정적인 훈련가",
+    traits: ["경쾌한 연속타", "리듬감 있는 전투", "끈질긴 추격"],
+    motto: "한 번 더. 마음에 새겨질 때까지.",
     asset: "/game-assets/fighters/fighter-hana.webp",
     width: 1200,
     height: 800,
@@ -168,9 +198,14 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
   {
     id: "arin",
     name: "아린",
+    title: "침묵 경계의 파수꾼",
     role: "저격",
     weapon: "말씀 소총",
     tagline: "흔들림 없이 약점을 겨눕니다",
+    story: "말소의 안개가 번지는 국경에서 홀로 신호를 지켜 온 파수꾼. 가장 어두운 순간에도 조급해하지 않고, 정확한 때가 오면 단 한 발로 길을 되찾습니다.",
+    personality: "냉정해 보이지만 헌신적인 현실가",
+    traits: ["약점 포착", "긴 호흡의 집중", "정밀한 마무리"],
+    motto: "기다림도 전투다. 때가 오면 놓치지 않는다.",
     asset: "/game-assets/fighters/fighter-arin.webp",
     width: 900,
     height: 1200,
@@ -1011,9 +1046,21 @@ export function BibleTypingApp() {
                     <span className="fighter-select__eyebrow">SELECT YOUR FIGHTER</span>
                     <h1 id="fighter-select-title">누구와 함께<br />싸울까요?</h1>
                     <div className="fighter-select__identity" aria-live="polite">
-                      <small>{selectedFighter.role} / {selectedFighter.weapon}</small>
+                      <small>{selectedFighter.title}</small>
                       <h2>{selectedFighter.name}</h2>
-                      <p>{selectedFighter.tagline}</p>
+                      <p>{selectedFighter.role} / {selectedFighter.weapon} · {selectedFighter.tagline}</p>
+                    </div>
+                    <div className="fighter-select__lore" aria-live="polite">
+                      <p>{selectedFighter.story}</p>
+                      <div className="fighter-select__personality">
+                        <span>성격</span><strong>{selectedFighter.personality}</strong>
+                      </div>
+                      <div className="fighter-select__traits" aria-label={`${selectedFighter.name}의 특징`}>
+                        {selectedFighter.traits.map((trait, index) => (
+                          <span key={trait}><b>{`${index + 1}`.padStart(2, "0")}</b>{trait}</span>
+                        ))}
+                      </div>
+                      <blockquote>“{selectedFighter.motto}”</blockquote>
                     </div>
                     <button className="fighter-select__start" onClick={startSelectedBattle} aria-keyshortcuts="Enter">
                       <span>[ ENTER ]</span>
@@ -1051,7 +1098,7 @@ export function BibleTypingApp() {
                       <span className="fighter-select__roster-copy">
                         <small>{`${index + 1}`.padStart(2, "0")} / {fighter.role}</small>
                         <strong>{fighter.name}</strong>
-                        <em>{fighter.weapon}</em>
+                        <em>{fighter.title}</em>
                       </span>
                     </button>
                   ))}
@@ -1266,7 +1313,7 @@ export function BibleTypingApp() {
                       </div>
                       <span>{selectedFighter.name} 승리 / {referenceFor(currentUnit, currentBook)}</span>
                       <h2>어둠을 물리쳤습니다.</h2>
-                      <p>“{currentUnit.t}”</p>
+                      <p>“{currentUnit.t}”<br /><small>{selectedFighter.motto}</small></p>
                       <div className="battle-victory__stats">
                         <div><strong>{formatNumber(battleScore)}</strong><span>전투 점수</span></div>
                         <div><strong>{result.cpm}</strong><span>타/분</span></div>

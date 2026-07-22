@@ -4661,8 +4661,8 @@ html[data-theme="dark"] .fighter-select {
 }
 
 .fighter-select__copy h1 {
-  margin: 14px 0 clamp(24px, 4vh, 48px);
-  font-size: clamp(48px, 5.6vw, 86px);
+  margin: 12px 0 clamp(18px, 2.5vh, 30px);
+  font-size: clamp(46px, 4.8vw, 74px);
   font-weight: 950;
   letter-spacing: -0.09em;
   line-height: 0.94;
@@ -4684,7 +4684,7 @@ html[data-theme="dark"] .fighter-select {
 
 .fighter-select__identity h2 {
   margin: 3px 0 4px;
-  font-size: clamp(42px, 4.8vw, 70px);
+  font-size: clamp(40px, 4vw, 58px);
   font-weight: 950;
   letter-spacing: -0.08em;
   line-height: 1;
@@ -4697,11 +4697,89 @@ html[data-theme="dark"] .fighter-select {
   font-weight: 720;
 }
 
+.fighter-select__lore {
+  width: min(100%, 540px);
+  margin-top: clamp(14px, 2vh, 22px);
+  border-top: 1px solid var(--select-line);
+  border-bottom: 1px solid var(--select-line);
+}
+
+.fighter-select__lore > p {
+  margin: 0;
+  padding: 12px 0;
+  color: var(--select-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.62;
+}
+
+.fighter-select__personality {
+  display: grid;
+  min-height: 32px;
+  padding: 6px 0;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  border-top: 1px solid var(--select-line);
+  font-size: 10px;
+}
+
+.fighter-select__personality span {
+  color: var(--fighter-accent);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-weight: 900;
+}
+
+.fighter-select__personality strong {
+  font-size: 11px;
+}
+
+.fighter-select__traits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--select-line);
+}
+
+.fighter-select__traits span {
+  display: flex;
+  min-width: 0;
+  min-height: 36px;
+  padding: 7px 8px;
+  align-items: center;
+  gap: 6px;
+  border-right: 1px solid var(--select-line);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.fighter-select__traits span:first-child {
+  padding-left: 0;
+}
+
+.fighter-select__traits span:last-child {
+  border-right: 0;
+}
+
+.fighter-select__traits b {
+  color: var(--fighter-accent);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 8px;
+}
+
+.fighter-select__lore blockquote {
+  margin: 0;
+  padding: 9px 0;
+  border-top: 1px solid var(--select-line);
+  color: var(--select-ink);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .fighter-select__start {
   display: grid;
   width: min(100%, 370px);
   min-height: 60px;
-  margin-top: clamp(24px, 4vh, 42px);
+  margin-top: clamp(16px, 2.4vh, 26px);
   padding: 0 18px;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -5523,6 +5601,12 @@ html[data-theme="dark"] .battle-practice {
   line-height: 1.7;
 }
 
+.battle-victory > p small {
+  color: var(--fighter-accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .battle-victory__stats {
   display: grid;
   width: min(100%, 620px);
@@ -5787,7 +5871,7 @@ html[data-theme="dark"] .battle-practice {
   .fighter-select__copy h1 {
     width: 52%;
     margin: 9px 0 0;
-    font-size: clamp(38px, 12.5vw, 52px);
+    font-size: clamp(34px, 11.5vw, 48px);
     line-height: 0.98;
   }
 
@@ -5796,14 +5880,15 @@ html[data-theme="dark"] .battle-practice {
   }
 
   .fighter-select__identity {
-    width: 55%;
+    width: 100%;
     margin-top: auto;
-    padding-left: 12px;
+    padding: 8px 0 0 12px;
     border-left-width: 3px;
+    background: var(--select-page);
   }
 
   .fighter-select__identity h2 {
-    font-size: 42px;
+    font-size: 36px;
   }
 
   .fighter-select__identity p {
@@ -5812,6 +5897,48 @@ html[data-theme="dark"] .battle-practice {
     font-size: 11px;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+  }
+
+  .fighter-select__lore {
+    width: 100%;
+    margin-top: 8px;
+    background: var(--select-page);
+  }
+
+  .fighter-select__lore > p {
+    display: -webkit-box;
+    overflow: hidden;
+    padding: 8px 0;
+    font-size: 10px;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .fighter-select__personality {
+    min-height: 26px;
+    padding: 3px 0;
+    font-size: 9px;
+  }
+
+  .fighter-select__personality strong {
+    font-size: 10px;
+  }
+
+  .fighter-select__traits span {
+    min-height: 30px;
+    padding: 5px 4px;
+    justify-content: center;
+    gap: 3px;
+    font-size: 9px;
+  }
+
+  .fighter-select__traits span:first-child {
+    padding-left: 4px;
+  }
+
+  .fighter-select__lore blockquote {
+    display: none;
   }
 
   .fighter-select__start {
@@ -5824,7 +5951,9 @@ html[data-theme="dark"] .battle-practice {
   .fighter-select__portrait {
     position: relative;
     z-index: 3;
-    padding: 2% 0 8% 26%;
+    height: 58%;
+    padding: 2% 0 4% 26%;
+    align-self: start;
     place-items: center end;
     pointer-events: none;
   }
@@ -5832,7 +5961,7 @@ html[data-theme="dark"] .battle-practice {
   .fighter-select__portrait::before {
     top: 14%;
     right: 3%;
-    bottom: 18%;
+    bottom: 10%;
     left: 38%;
     border-width: 10px;
   }
@@ -5847,7 +5976,7 @@ html[data-theme="dark"] .battle-practice {
 
   .fighter-select__portrait > i {
     right: 4%;
-    bottom: 18%;
+    bottom: 9%;
     width: 52%;
     border-bottom-width: 4px;
   }
@@ -6126,11 +6255,15 @@ html[data-theme="dark"] .battle-practice {
   }
 
   .fighter-select__copy h1 {
-    font-size: 36px;
+    font-size: 32px;
   }
 
   .fighter-select__identity {
-    width: 58%;
+    width: 100%;
+  }
+
+  .fighter-select__traits span {
+    font-size: 8px;
   }
 
   .fighter-select__start {

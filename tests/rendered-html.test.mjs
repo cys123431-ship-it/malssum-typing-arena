@@ -114,6 +114,15 @@ test("adds a persistent six-fighter chooser before Bible word battle", async () 
   assert.match(app, /fighter-riel\.webp/);
   assert.match(app, /fighter-hana\.webp/);
   assert.match(app, /fighter-arin\.webp/);
+  assert.match(app, /잿빛 기록의 배달자/);
+  assert.match(app, /새벽별의 관측자/);
+  assert.match(app, /깨어진 종의 대장장이/);
+  assert.match(app, /금서고의 붉은 필경사/);
+  assert.match(app, /푸른 성소의 수호자/);
+  assert.match(app, /침묵 경계의 파수꾼/);
+  assert.match(app, /fighter-select__lore/);
+  assert.match(app, /fighter-select__traits/);
+  assert.match(app, /selectedFighter\.traits\.map/);
   assert.match(css, /\.fighter-select/);
   assert.match(css, /\.fighter-select__portrait/);
   assert.match(css, /\.fighter-select__roster/);
