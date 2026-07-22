@@ -19,9 +19,22 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 
-type View = "home" | "library" | "practice" | "progress";
+type View = "home" | "library" | "battle-select" | "practice" | "progress";
 type VisualTheme = "classic" | "type-console";
 type PracticeMode = "standard" | "battle";
+type BattleFighterId = "seoha" | "mira" | "yuna" | "riel" | "hana" | "arin";
+
+type BattleFighter = {
+  id: BattleFighterId;
+  name: string;
+  role: string;
+  weapon: string;
+  tagline: string;
+  asset: string;
+  width: number;
+  height: number;
+  accent: string;
+};
 
 type BattleFeedback = {
   id: number;
@@ -95,6 +108,75 @@ type WordRange = {
 
 const STORAGE_KEY = "bible-typing-progress-v1";
 const VISUAL_THEME_STORAGE_KEY = "bible-typing-visual-theme";
+const BATTLE_FIGHTER_STORAGE_KEY = "bible-typing-battle-fighter";
+const BATTLE_FIGHTERS: BattleFighter[] = [
+  {
+    id: "seoha",
+    name: "서하",
+    role: "선봉",
+    weapon: "레일 스태프",
+    tagline: "빠르고 균형 잡힌 말씀 사격",
+    asset: "/game-assets/fighters/fighter-seoha.webp",
+    width: 800,
+    height: 1200,
+    accent: "#f0a32f",
+  },
+  {
+    id: "mira",
+    name: "미라",
+    role: "정밀",
+    weapon: "초승달 활",
+    tagline: "정확한 한 글자를 멀리 보냅니다",
+    asset: "/game-assets/fighters/fighter-mira.webp",
+    width: 900,
+    height: 1200,
+    accent: "#7ac8ff",
+  },
+  {
+    id: "yuna",
+    name: "유나",
+    role: "중화력",
+    weapon: "공명 포",
+    tagline: "묵직한 타격으로 어둠을 흔듭니다",
+    asset: "/game-assets/fighters/fighter-yuna.webp",
+    width: 800,
+    height: 1200,
+    accent: "#e35f62",
+  },
+  {
+    id: "riel",
+    name: "리엘",
+    role: "관통",
+    weapon: "펜 랜스",
+    tagline: "문장을 꿰뚫는 날카로운 집중",
+    asset: "/game-assets/fighters/fighter-riel.webp",
+    width: 1200,
+    height: 800,
+    accent: "#a47bff",
+  },
+  {
+    id: "hana",
+    name: "하나",
+    role: "연타",
+    weapon: "쌍 말씀봉",
+    tagline: "콤보가 쌓일수록 빛나는 연속타",
+    asset: "/game-assets/fighters/fighter-hana.webp",
+    width: 1200,
+    height: 800,
+    accent: "#e5bf45",
+  },
+  {
+    id: "arin",
+    name: "아린",
+    role: "저격",
+    weapon: "말씀 소총",
+    tagline: "흔들림 없이 약점을 겨눕니다",
+    asset: "/game-assets/fighters/fighter-arin.webp",
+    width: 900,
+    height: 1200,
+    accent: "#51d5ca",
+  },
+];
 
 function emptyProgress(): ProgressState {
   return {
@@ -219,6 +301,14 @@ export function BibleTypingApp() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [visualTheme, setVisualTheme] = useState<VisualTheme>("classic");
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("standard");
+  const [selectedFighterId, setSelectedFighterId] = useState<BattleFighterId>(() => {
+    if (typeof window === "undefined") return "seoha";
+    const savedFighter = window.localStorage.getItem(BATTLE_FIGHTER_STORAGE_KEY);
+    return BATTLE_FIGHTERS.some((fighter) => fighter.id === savedFighter)
+      ? savedFighter as BattleFighterId
+      : "seoha";
+  });
+  const [battleStartIndex, setBattleStartIndex] = useState(0);
   const [battleFeedback, setBattleFeedback] = useState<BattleFeedback | null>(null);
   const [battleEffectsEnabled, setBattleEffectsEnabled] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -259,6 +349,10 @@ export function BibleTypingApp() {
     document.documentElement.dataset.visualTheme = visualTheme;
     window.localStorage.setItem(VISUAL_THEME_STORAGE_KEY, visualTheme);
   }, [visualTheme]);
+
+  useEffect(() => {
+    window.localStorage.setItem(BATTLE_FIGHTER_STORAGE_KEY, selectedFighterId);
+  }, [selectedFighterId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -348,6 +442,10 @@ export function BibleTypingApp() {
   const currentBook = currentUnit ? booksByCode.get(currentUnit.b) : undefined;
   const homeUnit = bible?.units[progress.currentIndex] ?? bible?.units[0];
   const homeBook = homeUnit ? booksByCode.get(homeUnit.b) : undefined;
+  const selectedFighter = BATTLE_FIGHTERS.find((fighter) => fighter.id === selectedFighterId) ?? BATTLE_FIGHTERS[0];
+  const selectedFighterNumber = BATTLE_FIGHTERS.findIndex((fighter) => fighter.id === selectedFighter.id) + 1;
+  const battleStartUnit = bible?.units[battleStartIndex];
+  const battleStartBook = battleStartUnit ? booksByCode.get(battleStartUnit.b) : undefined;
   const elapsedSeconds = startedAt ? Math.max(0.1, (clock - startedAt) / 1000) : 0;
   const liveCorrectKeystrokes = Math.max(0, keystrokes - errors);
   const liveCpm = startedAt ? Math.round((liveCorrectKeystrokes / elapsedSeconds) * 60) : 0;
@@ -424,8 +522,14 @@ export function BibleTypingApp() {
   }, [openPractice]);
 
   const beginBattle = useCallback((index: number) => {
-    openPractice(index, true, "battle");
-  }, [openPractice]);
+    if (!bible) return;
+    setBattleStartIndex(Math.max(0, Math.min(index, bible.units.length - 1)));
+    setView("battle-select");
+  }, [bible]);
+
+  const startSelectedBattle = useCallback(() => {
+    openPractice(battleStartIndex, true, "battle");
+  }, [battleStartIndex, openPractice]);
 
   const continuePractice = useCallback((index: number) => {
     openPractice(index, false);
@@ -596,15 +700,21 @@ export function BibleTypingApp() {
   }
 
   useEffect(() => {
-    if (visualTheme !== "type-console" && !(practiceMode === "battle" && view === "practice")) return;
+    if (visualTheme !== "type-console" && view !== "battle-select" && !(practiceMode === "battle" && view === "practice")) return;
 
     function handleConsoleShortcut(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       const isInteractive = target?.matches("input, textarea, select, button, a, [contenteditable='true']") ?? false;
 
-      if (event.key === "Escape" && view === "practice") {
+      if (event.key === "Escape" && (view === "practice" || view === "battle-select")) {
         event.preventDefault();
         setView("home");
+        return;
+      }
+
+      if (view === "battle-select" && event.key === "Enter" && !isInteractive) {
+        event.preventDefault();
+        startSelectedBattle();
         return;
       }
 
@@ -627,7 +737,7 @@ export function BibleTypingApp() {
 
     window.addEventListener("keydown", handleConsoleShortcut);
     return () => window.removeEventListener("keydown", handleConsoleShortcut);
-  }, [beginBattle, beginPractice, bible, currentIndex, practiceMode, progress.currentIndex, visualTheme, view]);
+  }, [beginBattle, beginPractice, bible, currentIndex, practiceMode, progress.currentIndex, startSelectedBattle, visualTheme, view]);
 
   const achievements = [
     { title: "첫 문장", description: "첫 구절을 완주했어요", unlocked: completedVerses >= 1, mark: "01" },
@@ -667,7 +777,7 @@ export function BibleTypingApp() {
   ];
 
   return (
-    <div className={`app-frame app-frame--${view} ${view === "practice" ? "app-frame--practice" : ""} visual-theme--${visualTheme}`}>
+    <div className={`app-frame app-frame--${view} ${view === "practice" || view === "battle-select" ? "app-frame--practice" : ""} visual-theme--${visualTheme}`}>
       <aside className="sidebar">
         <button className="brand" onClick={() => setView("home")} aria-label="말씀타자 홈">
           <span className="brand__wordmark">말씀타자</span>
@@ -701,7 +811,7 @@ export function BibleTypingApp() {
       </aside>
 
       <div className="workspace">
-        {visualTheme === "type-console" && view !== "practice" && (
+        {visualTheme === "type-console" && view !== "practice" && view !== "battle-select" && (
           <header className="console-topbar">
             <button className="console-wordmark" onClick={() => setView("home")} aria-label="말씀타자 홈">말씀타자</button>
             <nav className="console-topbar__nav" aria-label="활자 콘솔 주요 메뉴">
@@ -880,6 +990,76 @@ export function BibleTypingApp() {
             </div>
           )}
 
+          {view === "battle-select" && (
+            <div className="page page--battle-select">
+              <section
+                className="fighter-select"
+                style={{ "--fighter-accent": selectedFighter.accent } as CSSProperties}
+                aria-labelledby="fighter-select-title"
+              >
+                <header className="fighter-select__header">
+                  <button onClick={() => setView("home")} aria-keyshortcuts="Escape">[ ESC ] 돌아가기</button>
+                  <div>
+                    <span>말씀 전투 / 전투원 선택</span>
+                    <strong>{battleStartUnit ? referenceFor(battleStartUnit, battleStartBook) : "오늘의 말씀"}</strong>
+                  </div>
+                  <p><strong>{`${selectedFighterNumber}`.padStart(2, "0")}</strong> / {`${BATTLE_FIGHTERS.length}`.padStart(2, "0")}</p>
+                </header>
+
+                <div className="fighter-select__stage">
+                  <div className="fighter-select__copy">
+                    <span className="fighter-select__eyebrow">SELECT YOUR FIGHTER</span>
+                    <h1 id="fighter-select-title">누구와 함께<br />싸울까요?</h1>
+                    <div className="fighter-select__identity" aria-live="polite">
+                      <small>{selectedFighter.role} / {selectedFighter.weapon}</small>
+                      <h2>{selectedFighter.name}</h2>
+                      <p>{selectedFighter.tagline}</p>
+                    </div>
+                    <button className="fighter-select__start" onClick={startSelectedBattle} aria-keyshortcuts="Enter">
+                      <span>[ ENTER ]</span>
+                      이 전투원으로 시작
+                      <ArrowRightIcon size={22} weight="bold" aria-hidden="true" />
+                    </button>
+                  </div>
+
+                  <div className={`fighter-select__portrait fighter-select__portrait--${selectedFighter.id}`} key={selectedFighter.id} aria-hidden="true">
+                    <span className="fighter-select__index">{`${selectedFighterNumber}`.padStart(2, "0")}</span>
+                    <Image
+                      src={selectedFighter.asset}
+                      width={selectedFighter.width}
+                      height={selectedFighter.height}
+                      sizes="(max-width: 820px) 92vw, 48vw"
+                      priority
+                      alt=""
+                    />
+                    <i />
+                  </div>
+                </div>
+
+                <div className="fighter-select__roster" role="group" aria-label="전투원 목록">
+                  {BATTLE_FIGHTERS.map((fighter, index) => (
+                    <button
+                      type="button"
+                      className={fighter.id === selectedFighter.id ? "is-selected" : ""}
+                      onClick={() => setSelectedFighterId(fighter.id)}
+                      aria-pressed={fighter.id === selectedFighter.id}
+                      key={fighter.id}
+                    >
+                      <span className="fighter-select__thumb">
+                        <Image src={fighter.asset} width={fighter.width} height={fighter.height} sizes="120px" alt="" />
+                      </span>
+                      <span className="fighter-select__roster-copy">
+                        <small>{`${index + 1}`.padStart(2, "0")} / {fighter.role}</small>
+                        <strong>{fighter.name}</strong>
+                        <em>{fighter.weapon}</em>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+
           {view === "library" && (
             <div className="page page--library">
               <header className="page-heading">
@@ -914,11 +1094,14 @@ export function BibleTypingApp() {
           {view === "practice" && currentUnit && (
             <div className="page page--practice">
               {practiceMode === "battle" ? (
-                <section className={`battle-practice ${result ? "is-complete" : ""} ${battleFeedback ? `is-${battleFeedback.kind}` : ""}`}>
+                <section
+                  className={`battle-practice ${result ? "is-complete" : ""} ${battleFeedback ? `is-${battleFeedback.kind}` : ""}`}
+                  style={{ "--fighter-accent": selectedFighter.accent } as CSSProperties}
+                >
                   <header className="battle-header">
                     <button onClick={() => setView("home")} aria-label="말씀 전투를 닫고 홈으로" aria-keyshortcuts="Escape">[ ESC ] 나가기</button>
                     <div>
-                      <span>말씀 전투</span>
+                      <span>{selectedFighter.name} / {selectedFighter.role}</span>
                       <h1>{referenceFor(currentUnit, currentBook)}</h1>
                     </div>
                     <p>오늘 <strong>{todayCompleted}/{progress.dailyGoal}</strong>절</p>
@@ -948,6 +1131,25 @@ export function BibleTypingApp() {
                         </div>
 
                         <div className="battle-field">
+                          <div
+                            className={`battle-fighter-wrap ${battleFeedback?.kind === "hit" ? "is-attacking" : battleFeedback?.kind === "miss" ? "is-recoiling" : ""}`}
+                            key={`fighter-${selectedFighter.id}-${battleFeedback?.id ?? 0}`}
+                          >
+                            <div className="battle-fighter-name">
+                              <small>{selectedFighter.role}</small>
+                              <strong>{selectedFighter.name}</strong>
+                            </div>
+                            <Image
+                              className="battle-fighter"
+                              src={selectedFighter.asset}
+                              width={selectedFighter.width}
+                              height={selectedFighter.height}
+                              sizes="(max-width: 820px) 44vw, 30vw"
+                              priority
+                              alt={`${selectedFighter.weapon}을 든 전투원 ${selectedFighter.name}`}
+                            />
+                          </div>
+
                           <aside className="battle-power-meter" aria-label="말씀 전투 점수">
                             <span>말씀의 힘</span>
                             <strong>{formatNumber(battleScore)}</strong>
@@ -1054,8 +1256,15 @@ export function BibleTypingApp() {
                       <div className="battle-victory__visual" aria-hidden="true">
                         {battleEffectsEnabled && <Image className="battle-victory__burst" src="/game-assets/word-impact-burst.webp" width={560} height={543} alt="" />}
                         <Image className="battle-victory__enemy" src="/game-assets/word-battle-enemy.png" width={720} height={576} alt="" />
+                        <Image
+                          className="battle-victory__fighter"
+                          src={selectedFighter.asset}
+                          width={selectedFighter.width}
+                          height={selectedFighter.height}
+                          alt=""
+                        />
                       </div>
-                      <span>말씀 승리 / {referenceFor(currentUnit, currentBook)}</span>
+                      <span>{selectedFighter.name} 승리 / {referenceFor(currentUnit, currentBook)}</span>
                       <h2>어둠을 물리쳤습니다.</h2>
                       <p>“{currentUnit.t}”</p>
                       <div className="battle-victory__stats">

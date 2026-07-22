@@ -98,3 +98,25 @@ test("keeps battle typing connected to the existing accuracy and completion logi
   assert.match(app, /finishPractice\(nextKeystrokes, nextErrors, start\)/);
   assert.doesNotMatch(app, /event\.key === "Tab"/);
 });
+
+test("adds a persistent six-fighter chooser before Bible word battle", async () => {
+  const { app, css } = await readSources();
+
+  assert.match(app, /type BattleFighterId = "seoha" \| "mira" \| "yuna" \| "riel" \| "hana" \| "arin"/);
+  assert.match(app, /BATTLE_FIGHTER_STORAGE_KEY = "bible-typing-battle-fighter"/);
+  assert.match(app, /setView\("battle-select"\)/);
+  assert.match(app, /fighter-select__roster/);
+  assert.match(app, /aria-pressed=\{fighter\.id === selectedFighter\.id\}/);
+  assert.match(app, /startSelectedBattle/);
+  assert.match(app, /fighter-seoha\.webp/);
+  assert.match(app, /fighter-mira\.webp/);
+  assert.match(app, /fighter-yuna\.webp/);
+  assert.match(app, /fighter-riel\.webp/);
+  assert.match(app, /fighter-hana\.webp/);
+  assert.match(app, /fighter-arin\.webp/);
+  assert.match(css, /\.fighter-select/);
+  assert.match(css, /\.fighter-select__portrait/);
+  assert.match(css, /\.fighter-select__roster/);
+  assert.match(css, /\.battle-fighter-wrap\.is-attacking/);
+  assert.match(css, /grid-auto-flow:\s*column/);
+});

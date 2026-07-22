@@ -77,4 +77,56 @@ final result: passed
 - Build, type check, lint, six source-level regression tests, archive validation, private deployment, and deployed-bundle asset/class checks passed.
 - The private Sites sign-in gate prevented an automated post-deployment viewport screenshot without authorizing account access. No sign-in or access-policy change was made during QA.
 
-final result: limited — authenticated viewport capture pending
+Post-deployment viewport status: authenticated capture remains pending.
+
+## 전투원 선택·전투 캐릭터 addendum — 2026-07-22
+
+### Source visual truth
+
+- User reference animation archive: `E:\예시.zip`
+- Extracted reference contact sheets: `C:\Users\yosub\AppData\Local\Temp\typinggame-effect-reference-53ce7d9da9f14d178a6c484943ba8455\Internet_20260722_124321_{1,2,9,14}-frames.jpg`
+- Generated fighter source comparison: `qa-evidence/word-battle/fighter-roster-assets.png`
+- Source comparison pixels: `1800×1120`; no density normalization was needed for asset review.
+
+### Intended implementation states
+
+- Fighter chooser: light and dark, `1440×1024`, `390×844`, and minimum width `320px`
+- Battle arena: selected fighter idle, correct-input attack, wrong-input recoil, and victory
+- Persistence: selected fighter restored from `bible-typing-battle-fighter`
+
+### Implementation evidence
+
+- Browser-rendered screenshot: unavailable.
+- Attempted CSS viewport: `1440×1024`, device scale factor `1`.
+- The local production renderer was prepared and static assets were verified with HTTP 200 responses, but the browser security policy rejected the local preview URL before a same-state capture could be made.
+- Browser console-error review and implementation pixel dimensions are therefore unavailable.
+- Full-view comparison and focused-region comparison could not be completed without a browser-rendered implementation artifact.
+
+### Findings
+
+- [P1] Rendered implementation evidence is missing.
+  - Location: fighter chooser and in-battle character placement.
+  - Evidence: the six final transparent fighter assets and source references were opened and reviewed, while the local implementation URL was blocked by browser policy before capture.
+  - Impact: code, build, and responsive rules pass, but character crop, text overlap, and mobile composition cannot be certified visually from a browser screenshot.
+  - Fix: capture the chooser and battle at `1440×1024` and `390×844` from an accessible preview or deployment, then place each beside the reference/contact sheet and repeat the five-surface comparison.
+
+### Fidelity surfaces checked without browser rendering
+
+- Fonts and typography: Korean sans and monospace roles, weights, truncation, and responsive sizes are defined in source; visual optical balance remains unverified.
+- Spacing and layout: sharp split layout, divider grid, six-item desktop roster, mobile horizontal roster, 44px controls, and 320px constraints are defined; visible crop remains unverified.
+- Colors and tokens: existing light/dark console tokens are preserved; per-fighter accents are restricted to identity and selection state.
+- Image quality: all six WebP assets have transparent backgrounds, validated alpha bounds, correct aspect metadata, and compact file sizes. The roster contact sheet shows no obvious chroma halo.
+- Copy and content: all six Korean names, roles, weapons, and taglines are app-specific and connected to the selected character state.
+
+### Comparison history
+
+- No visual iteration was possible because the first browser-rendered capture was blocked. No P0/P1/P2 design finding was marked resolved without visible post-fix evidence.
+
+### Implementation checks completed
+
+- TypeScript check passed.
+- ESLint passed.
+- Production build passed.
+- Seven regression tests passed, including six-fighter persistence, battle-select routing, asset wiring, attack animation, mobile roster flow, and Tab-key preservation.
+
+final result: blocked
