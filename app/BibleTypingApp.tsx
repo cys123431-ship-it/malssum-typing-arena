@@ -14,6 +14,7 @@ import NextImage, { type ImageProps } from "next/image";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
+  CrosshairIcon,
   ListIcon,
   MoonIcon,
   SunIcon,
@@ -40,6 +41,9 @@ type BattleFighter = {
   asset: string;
   width: number;
   height: number;
+  battleAsset: string;
+  battleWidth: number;
+  battleHeight: number;
   accent: string;
 };
 
@@ -221,6 +225,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     asset: "/game-assets/fighters/fighter-seoha-v2.webp",
     width: 1024,
     height: 1536,
+    battleAsset: "/game-assets/fighters/fighter-seoha-battle-v2.webp",
+    battleWidth: 1024,
+    battleHeight: 1536,
     accent: "#f0a32f",
   },
   {
@@ -237,6 +244,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     asset: "/game-assets/fighters/fighter-mira-v2.webp",
     width: 1403,
     height: 1121,
+    battleAsset: "/game-assets/fighters/fighter-mira-battle-v2.webp",
+    battleWidth: 1023,
+    battleHeight: 1537,
     accent: "#7ac8ff",
   },
   {
@@ -253,6 +263,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     asset: "/game-assets/fighters/fighter-yuna-v2.webp",
     width: 1536,
     height: 1024,
+    battleAsset: "/game-assets/fighters/fighter-yuna-battle-v2.webp",
+    battleWidth: 1024,
+    battleHeight: 1536,
     accent: "#e35f62",
   },
   {
@@ -269,6 +282,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     asset: "/game-assets/fighters/fighter-riel-v2.webp",
     width: 1536,
     height: 1024,
+    battleAsset: "/game-assets/fighters/fighter-riel-battle-v2.webp",
+    battleWidth: 1024,
+    battleHeight: 1536,
     accent: "#a47bff",
   },
   {
@@ -285,6 +301,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     asset: "/game-assets/fighters/fighter-hana-v2.webp",
     width: 1129,
     height: 1393,
+    battleAsset: "/game-assets/fighters/fighter-hana-battle-v2.webp",
+    battleWidth: 1007,
+    battleHeight: 1562,
     accent: "#e5bf45",
   },
   {
@@ -301,6 +320,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     asset: "/game-assets/fighters/fighter-arin-v2.webp",
     width: 1570,
     height: 1002,
+    battleAsset: "/game-assets/fighters/fighter-arin-battle-v2.webp",
+    battleWidth: 992,
+    battleHeight: 1586,
     accent: "#51d5ca",
   },
 ];
@@ -1726,6 +1748,16 @@ export function BibleTypingApp() {
                         </div>
 
                         <div className="battle-field">
+                          <Image
+                            className="battle-arena-backdrop"
+                            src="/game-assets/battlefield-sanctuary-v2.webp"
+                            width={1680}
+                            height={945}
+                            sizes="100vw"
+                            priority
+                            alt=""
+                            aria-hidden="true"
+                          />
                           <div
                             className={`battle-fighter-wrap battle-fighter-wrap--${selectedFighter.id} ${battleFeedback?.kind === "hit" ? "is-attacking" : battleFeedback?.kind === "miss" ? "is-recoiling" : ""}`}
                             key={`fighter-${selectedFighter.id}-${battleFeedback?.id ?? 0}`}
@@ -1736,10 +1768,10 @@ export function BibleTypingApp() {
                             </div>
                             <Image
                               className="battle-fighter"
-                              src={selectedFighter.asset}
-                              width={selectedFighter.width}
-                              height={selectedFighter.height}
-                              sizes="(max-width: 820px) 44vw, 30vw"
+                              src={selectedFighter.battleAsset}
+                              width={selectedFighter.battleWidth}
+                              height={selectedFighter.battleHeight}
+                              sizes="(max-width: 820px) 78vw, 44vw"
                               priority
                               alt={`${selectedFighter.weapon}을 든 전투원 ${selectedFighter.name}`}
                             />
@@ -1757,7 +1789,10 @@ export function BibleTypingApp() {
                           </aside>
 
                           <div className="battle-enemy-wrap" key={`enemy-${battleFeedback?.id ?? 0}`}>
-                            <span>WEAK POINT</span>
+                            <div className="battle-target-lock" aria-hidden="true">
+                              <CrosshairIcon weight="thin" />
+                              <span>LOCKED</span>
+                            </div>
                             <Image
                               className="battle-enemy"
                               src={activeBattleStage.asset}
@@ -1771,7 +1806,9 @@ export function BibleTypingApp() {
                           {battleEffectsEnabled && battleFeedback?.kind === "hit" && (
                             <div className={`battle-hit-fx is-strength-${battleFeedback.strength}`} key={`hit-${battleFeedback.id}`} aria-hidden="true">
                               <Image className="battle-projectile" src="/game-assets/word-projectile-streak.webp" width={960} height={167} alt="" />
+                              <Image className="battle-muzzle" src="/game-assets/word-impact-burst.webp" width={560} height={543} alt="" />
                               <Image className="battle-impact" src="/game-assets/word-impact-burst.webp" width={560} height={543} alt="" />
+                              <strong className="battle-hit-callout">{battleFeedback.strength === 3 ? "PERFECT" : battleFeedback.strength === 2 ? "POWER HIT" : "HIT"}</strong>
                             </div>
                           )}
                           {battleEffectsEnabled && battleFeedback?.kind === "miss" && <div className="battle-miss-flash" key={`miss-${battleFeedback.id}`} aria-hidden="true" />}
