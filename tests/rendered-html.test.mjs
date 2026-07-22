@@ -108,12 +108,12 @@ test("adds a persistent six-fighter chooser before Bible word battle", async () 
   assert.match(app, /fighter-select__roster/);
   assert.match(app, /aria-pressed=\{fighter\.id === selectedFighter\.id\}/);
   assert.match(app, /startSelectedBattle/);
-  assert.match(app, /fighter-seoha\.webp/);
-  assert.match(app, /fighter-mira\.webp/);
-  assert.match(app, /fighter-yuna\.webp/);
-  assert.match(app, /fighter-riel\.webp/);
-  assert.match(app, /fighter-hana\.webp/);
-  assert.match(app, /fighter-arin\.webp/);
+  assert.match(app, /fighter-seoha-v2\.webp/);
+  assert.match(app, /fighter-mira-v2\.webp/);
+  assert.match(app, /fighter-yuna-v2\.webp/);
+  assert.match(app, /fighter-riel-v2\.webp/);
+  assert.match(app, /fighter-hana-v2\.webp/);
+  assert.match(app, /fighter-arin-v2\.webp/);
   assert.match(app, /잿빛 기록의 배달자/);
   assert.match(app, /새벽별의 관측자/);
   assert.match(app, /깨어진 종의 대장장이/);

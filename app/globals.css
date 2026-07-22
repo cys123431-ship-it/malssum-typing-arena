@@ -5564,9 +5564,12 @@ html[data-theme="dark"] .fighter-select {
   animation: fighter-portrait-enter 340ms cubic-bezier(0.2, 0.76, 0.24, 1) both;
 }
 
+.fighter-select__portrait--mira > img,
+.fighter-select__portrait--yuna > img,
 .fighter-select__portrait--riel > img,
-.fighter-select__portrait--hana > img {
-  width: min(100%, 780px);
+.fighter-select__portrait--hana > img,
+.fighter-select__portrait--arin > img {
+  width: min(100%, 860px);
 }
 
 .fighter-select__portrait > i {
@@ -5888,6 +5891,16 @@ html[data-theme="dark"] .battle-practice {
   height: 94%;
   place-items: end center;
   transform-origin: 58% 82%;
+}
+
+.battle-fighter-wrap--mira,
+.battle-fighter-wrap--yuna,
+.battle-fighter-wrap--riel,
+.battle-fighter-wrap--hana,
+.battle-fighter-wrap--arin {
+  left: 3%;
+  width: min(48vw, 520px);
+  max-width: 56%;
 }
 
 .battle-fighter {
@@ -6689,8 +6702,11 @@ html[data-theme="dark"] .battle-practice {
   }
 
   .fighter-select__portrait > img,
+  .fighter-select__portrait--mira > img,
+  .fighter-select__portrait--yuna > img,
   .fighter-select__portrait--riel > img,
-  .fighter-select__portrait--hana > img {
+  .fighter-select__portrait--hana > img,
+  .fighter-select__portrait--arin > img {
     width: 100%;
     height: 88%;
     object-position: right center;
@@ -6819,6 +6835,16 @@ html[data-theme="dark"] .battle-practice {
     width: min(47vw, 210px);
     max-width: 48%;
     height: 94%;
+  }
+
+  .battle-fighter-wrap--mira,
+  .battle-fighter-wrap--yuna,
+  .battle-fighter-wrap--riel,
+  .battle-fighter-wrap--hana,
+  .battle-fighter-wrap--arin {
+    left: 1%;
+    width: min(60vw, 270px);
+    max-width: 60%;
   }
 
   .battle-fighter-name {

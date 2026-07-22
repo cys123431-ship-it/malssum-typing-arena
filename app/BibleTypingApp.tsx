@@ -161,9 +161,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     personality: "침착하고 다정한 책임가",
     traits: ["균형 잡힌 전개", "빠른 기동", "안정적인 연계"],
     motto: "한 줄을 지키면, 다음 길이 열린다.",
-    asset: "/game-assets/fighters/fighter-seoha.webp",
-    width: 800,
-    height: 1200,
+    asset: "/game-assets/fighters/fighter-seoha-v2.webp",
+    width: 1024,
+    height: 1536,
     accent: "#f0a32f",
   },
   {
@@ -177,9 +177,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     personality: "조용하고 섬세한 완벽주의자",
     traits: ["정확한 조준", "차분한 집중", "원거리 대응"],
     motto: "보이지 않아도, 말씀은 방향을 남긴다.",
-    asset: "/game-assets/fighters/fighter-mira.webp",
-    width: 900,
-    height: 1200,
+    asset: "/game-assets/fighters/fighter-mira-v2.webp",
+    width: 1403,
+    height: 1121,
     accent: "#7ac8ff",
   },
   {
@@ -193,9 +193,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     personality: "호쾌하고 따뜻한 보호자",
     traits: ["묵직한 타격", "강한 존재감", "든든한 압박"],
     motto: "다시 울리면 돼. 더 크게, 더 멀리.",
-    asset: "/game-assets/fighters/fighter-yuna.webp",
-    width: 800,
-    height: 1200,
+    asset: "/game-assets/fighters/fighter-yuna-v2.webp",
+    width: 1536,
+    height: 1024,
     accent: "#e35f62",
   },
   {
@@ -209,9 +209,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     personality: "대담하고 예리한 반골",
     traits: ["날카로운 관통", "과감한 돌파", "흔들림 없는 판단"],
     motto: "틀린 문장은, 바른 글로 꿰뚫는다.",
-    asset: "/game-assets/fighters/fighter-riel.webp",
-    width: 1200,
-    height: 800,
+    asset: "/game-assets/fighters/fighter-riel-v2.webp",
+    width: 1536,
+    height: 1024,
     accent: "#a47bff",
   },
   {
@@ -225,9 +225,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     personality: "활기차고 긍정적인 훈련가",
     traits: ["경쾌한 연속타", "리듬감 있는 전투", "끈질긴 추격"],
     motto: "한 번 더. 마음에 새겨질 때까지.",
-    asset: "/game-assets/fighters/fighter-hana.webp",
-    width: 1200,
-    height: 800,
+    asset: "/game-assets/fighters/fighter-hana-v2.webp",
+    width: 1129,
+    height: 1393,
     accent: "#e5bf45",
   },
   {
@@ -241,9 +241,9 @@ const BATTLE_FIGHTERS: BattleFighter[] = [
     personality: "냉정해 보이지만 헌신적인 현실가",
     traits: ["약점 포착", "긴 호흡의 집중", "정밀한 마무리"],
     motto: "기다림도 전투다. 때가 오면 놓치지 않는다.",
-    asset: "/game-assets/fighters/fighter-arin.webp",
-    width: 900,
-    height: 1200,
+    asset: "/game-assets/fighters/fighter-arin-v2.webp",
+    width: 1570,
+    height: 1002,
     accent: "#51d5ca",
   },
 ];
@@ -1556,7 +1556,7 @@ export function BibleTypingApp() {
 
                         <div className="battle-field">
                           <div
-                            className={`battle-fighter-wrap ${battleFeedback?.kind === "hit" ? "is-attacking" : battleFeedback?.kind === "miss" ? "is-recoiling" : ""}`}
+                            className={`battle-fighter-wrap battle-fighter-wrap--${selectedFighter.id} ${battleFeedback?.kind === "hit" ? "is-attacking" : battleFeedback?.kind === "miss" ? "is-recoiling" : ""}`}
                             key={`fighter-${selectedFighter.id}-${battleFeedback?.id ?? 0}`}
                           >
                             <div className="battle-fighter-name">
