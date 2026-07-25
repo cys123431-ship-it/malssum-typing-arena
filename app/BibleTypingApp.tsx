@@ -1805,9 +1805,9 @@ export function BibleTypingApp() {
 
                           {battleEffectsEnabled && battleFeedback?.kind === "hit" && (
                             <div className={`battle-hit-fx is-strength-${battleFeedback.strength}`} key={`hit-${battleFeedback.id}`} aria-hidden="true">
-                              <Image className="battle-projectile" src="/game-assets/word-projectile-streak.webp" width={960} height={167} alt="" />
-                              <Image className="battle-muzzle" src="/game-assets/word-impact-burst.webp" width={560} height={543} alt="" />
-                              <Image className="battle-impact" src="/game-assets/word-impact-burst.webp" width={560} height={543} alt="" />
+                              <Image className="battle-muzzle" src="/game-assets/effects/battle-muzzle-flash-v2.webp" width={515} height={488} alt="" />
+                              <Image className="battle-projectile" src="/game-assets/effects/battle-tracer-v2.webp" width={1187} height={638} alt="" />
+                              <Image className="battle-impact" src="/game-assets/effects/battle-impact-v2.webp" width={760} height={714} alt="" />
                               <strong className="battle-hit-callout">{battleFeedback.strength === 3 ? "PERFECT" : battleFeedback.strength === 2 ? "POWER HIT" : "HIT"}</strong>
                             </div>
                           )}
@@ -1843,9 +1843,9 @@ export function BibleTypingApp() {
                                         <Image
                                           className="battle-letter-impact"
                                           key={`letter-hit-${battleFeedback?.id ?? 0}`}
-                                          src="/game-assets/word-impact-burst.webp"
-                                          width={560}
-                                          height={543}
+                                          src="/game-assets/effects/battle-impact-v2.webp"
+                                          width={760}
+                                          height={714}
                                           alt=""
                                           aria-hidden="true"
                                         />
@@ -1903,7 +1903,7 @@ export function BibleTypingApp() {
                   ) : result ? (
                     <div className="battle-victory" aria-live="polite">
                       <div className="battle-victory__visual" aria-hidden="true">
-                        {battleEffectsEnabled && <Image className="battle-victory__burst" src="/game-assets/word-impact-burst.webp" width={560} height={543} alt="" />}
+                        {battleEffectsEnabled && <Image className="battle-victory__burst" src="/game-assets/effects/battle-impact-v2.webp" width={760} height={714} alt="" />}
                         <Image className="battle-victory__enemy" src={activeBattleStage.asset} width={activeBattleStage.width} height={activeBattleStage.height} alt="" />
                         <Image
                           className="battle-victory__fighter"

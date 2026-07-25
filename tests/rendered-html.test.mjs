@@ -99,8 +99,11 @@ test("adds the optional Bible word battle without replacing standard practice", 
   assert.match(app, /battleHealth/);
   assert.match(app, /battleScore/);
   assert.match(app, /enemy-shadow\.webp/);
-  assert.match(app, /word-impact-burst\.webp/);
-  assert.match(app, /word-projectile-streak\.webp/);
+  assert.match(app, /battle-muzzle-flash-v2\.webp/);
+  assert.match(app, /battle-tracer-v2\.webp/);
+  assert.match(app, /battle-impact-v2\.webp/);
+  assert.doesNotMatch(app, /word-impact-burst\.webp/);
+  assert.doesNotMatch(app, /word-projectile-streak\.webp/);
   assert.match(css, /\.battle-practice/);
   assert.match(css, /\.battle-health-track/);
   assert.match(css, /\.battle-hit-fx/);
