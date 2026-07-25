@@ -8322,8 +8322,8 @@ html[data-theme="dark"] .battle-practice {
 
 .battle-projectile {
   z-index: 11;
-  top: 6%;
-  left: 41%;
+  top: 11.5%;
+  left: 46.5%;
   width: min(13vw, 176px);
   object-fit: contain;
   opacity: 0;
@@ -8334,9 +8334,9 @@ html[data-theme="dark"] .battle-practice {
 
 .battle-muzzle {
   z-index: 12;
-  top: 6%;
-  left: 46.5%;
-  width: min(9.5vw, 124px);
+  top: 15.5%;
+  left: 53.5%;
+  width: min(6.2vw, 82px);
   object-fit: contain;
   opacity: 0;
   mix-blend-mode: normal;
@@ -8504,14 +8504,14 @@ html[data-theme="dark"] .battle-practice {
   }
 
   .battle-muzzle {
-    top: 8%;
-    left: 35%;
-    width: min(21vw, 84px);
+    top: 14%;
+    left: 47%;
+    width: min(16vw, 64px);
   }
 
   .battle-projectile {
-    top: 8%;
-    left: 20%;
+    top: 13%;
+    left: 27%;
     width: min(38vw, 152px);
   }
 
