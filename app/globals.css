@@ -5103,14 +5103,35 @@ html[data-theme="dark"] .console-live-stats span {
 .battle-fighter-wrap--hana,
 .battle-fighter-wrap--arin {
   z-index: 6;
-  bottom: -16%;
-  left: 47%;
-  width: min(43vw, 590px);
+  bottom: -20%;
+  left: 56%;
+  width: min(36vw, 490px);
   max-width: none;
-  height: 114%;
+  height: 118%;
   place-items: end center;
   transform: translateX(-50%);
-  transform-origin: 54% 77%;
+  transform-origin: 58% 82%;
+  transform-style: preserve-3d;
+}
+
+.battle-fighter {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.battle-fighter--idle {
+  z-index: 2;
+  opacity: 1;
+  transform: rotateY(0deg) translateY(0) scale(1);
+  transform-origin: 52% 72%;
+}
+
+.battle-fighter--aim {
+  z-index: 1;
+  opacity: 0;
+  transform: rotateY(82deg) translateY(10px) scale(0.96);
+  transform-origin: 54% 72%;
 }
 
 .battle-fighter {
@@ -5151,13 +5172,13 @@ html[data-theme="dark"] .console-live-stats span {
 
 .battle-enemy-wrap {
   z-index: 4;
-  top: -2%;
+  top: -4%;
   right: auto;
   bottom: auto;
-  left: 50%;
-  width: min(24vw, 330px);
-  max-width: 30%;
-  height: 58%;
+  left: 31%;
+  width: min(21vw, 286px);
+  max-width: 26%;
+  height: 54%;
   transform: translateX(-50%) translateZ(-48px);
   transform-origin: 50% 48%;
 }
@@ -5420,11 +5441,11 @@ html[data-theme="dark"] .console-live-stats span {
   .battle-fighter-wrap--riel,
   .battle-fighter-wrap--hana,
   .battle-fighter-wrap--arin {
-    bottom: -18%;
-    left: 45%;
-    width: min(77vw, 330px);
+    bottom: -22%;
+    left: 60%;
+    width: min(68vw, 292px);
     max-width: none;
-    height: 116%;
+    height: 120%;
   }
 
   .battle-fighter-name {
@@ -5434,9 +5455,11 @@ html[data-theme="dark"] .console-live-stats span {
 
   .battle-power-meter {
     top: 12px;
-    left: 10px;
+    right: 10px;
+    left: auto;
     min-width: 96px;
     padding: 7px 8px 7px 10px;
+    align-items: flex-end;
   }
 
   .battle-power-meter > span,
@@ -8244,14 +8267,15 @@ html[data-theme="dark"] .battle-practice {
 .battle-fighter-wrap--hana,
 .battle-fighter-wrap--arin {
   z-index: 6;
-  bottom: -16%;
-  left: 47%;
-  width: min(43vw, 590px);
+  bottom: -20%;
+  left: 56%;
+  width: min(36vw, 490px);
   max-width: none;
-  height: 114%;
+  height: 118%;
   place-items: end center;
   transform: translateX(-50%);
-  transform-origin: 54% 77%;
+  transform-origin: 58% 82%;
+  transform-style: preserve-3d;
 }
 
 .battle-fighter-name {
@@ -8283,13 +8307,13 @@ html[data-theme="dark"] .battle-practice {
 
 .battle-enemy-wrap {
   z-index: 4;
-  top: -2%;
+  top: -4%;
   right: auto;
   bottom: auto;
-  left: 50%;
-  width: min(24vw, 330px);
-  max-width: 30%;
-  height: 58%;
+  left: 31%;
+  width: min(21vw, 286px);
+  max-width: 26%;
+  height: 54%;
   transform: translateX(-50%) translateZ(-48px);
   transform-origin: 50% 48%;
 }
@@ -8301,7 +8325,15 @@ html[data-theme="dark"] .battle-practice {
 }
 
 .battle-fighter-wrap.is-attacking {
-  animation: battle-fighter-depth-attack 330ms cubic-bezier(0.16, 0.78, 0.25, 1);
+  animation: battle-fighter-depth-attack 960ms cubic-bezier(0.16, 0.78, 0.25, 1);
+}
+
+.battle-fighter-wrap.is-attacking .battle-fighter--idle {
+  animation: battle-fighter-face-turn 960ms cubic-bezier(0.18, 0.72, 0.24, 1);
+}
+
+.battle-fighter-wrap.is-attacking .battle-fighter--aim {
+  animation: battle-fighter-aim-turn 960ms cubic-bezier(0.18, 0.72, 0.24, 1);
 }
 
 .battle-fighter-wrap.is-recoiling {
@@ -8309,54 +8341,54 @@ html[data-theme="dark"] .battle-practice {
 }
 
 .battle-practice.is-hit .battle-enemy-wrap {
-  animation: battle-enemy-depth-hit 330ms cubic-bezier(0.18, 0.72, 0.3, 1);
+  animation: battle-enemy-depth-hit 330ms cubic-bezier(0.18, 0.72, 0.3, 1) 570ms;
 }
 
 .battle-practice.is-hit .battle-arena-backdrop {
-  animation: battle-camera-kick 300ms cubic-bezier(0.16, 0.78, 0.25, 1);
+  animation: battle-camera-kick 300ms cubic-bezier(0.16, 0.78, 0.25, 1) 560ms;
 }
 
 .battle-practice.is-hit .battle-target-lock {
-  animation: battle-lock-confirm 360ms ease-out;
+  animation: battle-lock-confirm 360ms ease-out 540ms;
 }
 
 .battle-projectile {
   z-index: 11;
-  top: 11.5%;
-  left: 46.5%;
-  width: min(13vw, 176px);
+  top: 13%;
+  left: 47%;
+  width: min(18vw, 238px);
   object-fit: contain;
   opacity: 0;
   mix-blend-mode: normal;
-  transform-origin: 95% 86%;
-  animation: battle-depth-projectile 240ms cubic-bezier(0.08, 0.82, 0.16, 1) both;
+  transform-origin: 82% 76%;
+  animation: battle-depth-projectile 430ms cubic-bezier(0.08, 0.82, 0.16, 1) 285ms both;
 }
 
 .battle-muzzle {
   z-index: 12;
-  top: 15.5%;
-  left: 53.5%;
-  width: min(6.2vw, 82px);
+  top: 17%;
+  left: 59%;
+  width: min(7vw, 92px);
   object-fit: contain;
   opacity: 0;
   mix-blend-mode: normal;
   transform-origin: 89% 86%;
-  animation: battle-depth-muzzle 170ms cubic-bezier(0.12, 0.78, 0.2, 1) both;
+  animation: battle-depth-muzzle 190ms cubic-bezier(0.12, 0.78, 0.2, 1) 275ms both;
 }
 
 .battle-impact,
 .battle-hit-fx.is-strength-2 .battle-impact,
 .battle-hit-fx.is-strength-3 .battle-impact {
   z-index: 13;
-  top: 8%;
+  top: 5%;
   right: auto;
-  left: 50%;
+  left: 31%;
   width: min(16vw, 210px);
   object-fit: contain;
   opacity: 0;
   mix-blend-mode: normal;
   transform: translateX(-50%);
-  animation: battle-depth-impact 420ms cubic-bezier(0.12, 0.72, 0.22, 1) 105ms both;
+  animation: battle-depth-impact 460ms cubic-bezier(0.12, 0.72, 0.22, 1) 565ms both;
 }
 
 .battle-hit-fx.is-strength-2 .battle-impact {
@@ -8368,7 +8400,7 @@ html[data-theme="dark"] .battle-practice {
 }
 
 .battle-hit-callout {
-  animation-delay: 115ms;
+  animation-delay: 590ms;
 }
 
 .battle-letter-impact {
@@ -8421,12 +8453,33 @@ html[data-theme="dark"] .battle-practice {
 }
 
 @keyframes battle-fighter-depth-attack {
-  0% { transform: translateX(-50%) translateY(0) rotate(0deg) scale(1); }
-  12% { transform: translateX(-50%) translateY(4px) rotate(0.8deg) scale(1.01); }
-  26% { transform: translateX(calc(-50% - 14px)) translateY(13px) rotate(-2.4deg) scale(1.024); }
-  50% { transform: translateX(calc(-50% + 5px)) translateY(-3px) rotate(0.7deg) scale(1.012); }
-  74% { transform: translateX(calc(-50% - 2px)) translateY(2px) rotate(-0.3deg) scale(1.004); }
+  0%, 13% { transform: translateX(-50%) translateY(0) rotate(0deg) scale(1); }
+  24% { transform: translateX(calc(-50% + 12px)) translateY(3px) rotate(1.2deg) scale(1.015); }
+  31% { transform: translateX(calc(-50% + 5px)) translateY(0) rotate(0deg) scale(1.01); }
+  37% { transform: translateX(calc(-50% - 20px)) translateY(12px) rotate(-2.8deg) scale(0.985); }
+  48% { transform: translateX(calc(-50% + 6px)) translateY(-4px) rotate(0.8deg) scale(1.008); }
+  65% { transform: translateX(calc(-50% - 2px)) translateY(1px) rotate(-0.25deg) scale(1.002); }
+  82% { transform: translateX(calc(-50% + 8px)) translateY(2px) rotate(0.8deg) scale(1.008); }
   100% { transform: translateX(-50%) translateY(0) rotate(0deg) scale(1); }
+}
+
+@keyframes battle-fighter-face-turn {
+  0%, 12% { opacity: 1; transform: rotateY(0deg) translateY(0) scale(1); }
+  21% { opacity: 0.45; transform: rotateY(-68deg) translateY(2px) scale(0.99); }
+  25%, 76% { opacity: 0; transform: rotateY(-88deg) translateY(5px) scale(0.98); }
+  85% { opacity: 0.48; transform: rotateY(-62deg) translateY(2px) scale(0.99); }
+  100% { opacity: 1; transform: rotateY(0deg) translateY(0) scale(1); }
+}
+
+@keyframes battle-fighter-aim-turn {
+  0%, 16% { opacity: 0; transform: rotateY(84deg) translateY(10px) scale(0.96); }
+  24% { opacity: 0.72; transform: rotateY(32deg) translateY(3px) scale(0.99); }
+  29% { opacity: 1; transform: rotateY(0deg) translateY(0) scale(1); }
+  36% { opacity: 1; transform: rotateY(0deg) translate(-8px, 12px) rotateZ(-2.6deg) scale(0.965); }
+  48% { opacity: 1; transform: rotateY(0deg) translate(4px, -3px) rotateZ(0.6deg) scale(1.006); }
+  68%, 75% { opacity: 1; transform: rotateY(0deg) translateY(0) scale(1); }
+  84% { opacity: 0.46; transform: rotateY(-64deg) translateY(3px) scale(0.98); }
+  89%, 100% { opacity: 0; transform: rotateY(-88deg) translateY(8px) scale(0.96); }
 }
 
 @keyframes battle-fighter-depth-recoil {
@@ -8441,11 +8494,11 @@ html[data-theme="dark"] .battle-practice {
 }
 
 @keyframes battle-depth-projectile {
-  0% { opacity: 0; transform: scale(0.12, 0.46); }
-  10% { opacity: 1; }
-  46% { opacity: 0.96; transform: scale(1, 0.72); }
-  76% { opacity: 0.54; transform: scale(0.9, 0.48); }
-  100% { opacity: 0; transform: scale(0.72, 0.3); }
+  0% { opacity: 0; transform: translate3d(58%, 18%, 0) scale(0.32, 0.42); }
+  9% { opacity: 1; }
+  38% { opacity: 0.98; transform: translate3d(4%, 4%, 0) scale(0.82, 0.64); }
+  76% { opacity: 0.92; transform: translate3d(-68%, -8%, 0) scale(1, 0.72); }
+  100% { opacity: 0; transform: translate3d(-108%, -16%, 0) scale(0.58, 0.38); }
 }
 
 @keyframes battle-depth-muzzle {
@@ -8480,45 +8533,48 @@ html[data-theme="dark"] .battle-practice {
   .battle-fighter-wrap--riel,
   .battle-fighter-wrap--hana,
   .battle-fighter-wrap--arin {
-    bottom: -18%;
-    left: 45%;
-    width: min(77vw, 330px);
+    bottom: -22%;
+    left: 60%;
+    width: min(68vw, 292px);
     max-width: none;
-    height: 116%;
+    height: 120%;
   }
 
   .battle-power-meter {
     top: 12px;
-    left: 10px;
+    right: 10px;
+    left: auto;
     min-width: 96px;
     padding: 7px 8px 7px 10px;
+    align-items: flex-end;
   }
 
   .battle-enemy-wrap {
     top: -4%;
     right: auto;
-    left: 50%;
-    width: min(34vw, 150px);
-    max-width: 38%;
-    height: 53%;
+    left: 28%;
+    width: min(29vw, 128px);
+    max-width: 32%;
+    height: 49%;
   }
 
   .battle-muzzle {
-    top: 14%;
-    left: 47%;
-    width: min(16vw, 64px);
+    top: 17%;
+    left: 65%;
+    width: min(18vw, 70px);
   }
 
   .battle-projectile {
-    top: 13%;
-    left: 27%;
-    width: min(38vw, 152px);
+    top: 12%;
+    left: 39%;
+    width: min(45vw, 176px);
   }
 
   .battle-impact,
   .battle-hit-fx.is-strength-2 .battle-impact,
   .battle-hit-fx.is-strength-3 .battle-impact {
-    top: 1%;
+    top: 0;
+    left: 28%;
     width: min(35vw, 142px);
   }
 

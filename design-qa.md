@@ -158,3 +158,52 @@ final result: blocked
 - P2: 없음
 
 final result: passed
+
+## 전투원 급회전·원거리 사격 모션 addendum — 2026-07-28
+
+### 시각 원본과 구현 증거
+
+- Source visual truth: `C:\Users\yosub\AppData\Local\Temp\malssum-battle-reference-20260722\analysis-sheets\contact-1.jpg`
+- Reference motion sequence: 정면 대기 → 적 방향으로 급회전 → 후면 조준 유지 → 정면 복귀
+- Desktop implementation: `work/battle-turn-idle-local-v2.png`, `work/battle-fire-paused-360ms-local.png`, `work/battle-fire-paused-600ms-local.png`
+- Mobile implementation: `work/battle-fire-mobile-full-390x844-local-v2.png`
+- Combined comparison: `work/battle-motion-reference-vs-implementation.jpg`
+- Desktop viewport and implementation pixels: CSS `1280×720`, device scale factor `1`, PNG `1280×720`
+- Mobile viewport and implementation pixels: CSS `390×844`, device scale factor `1`, full-page PNG `390×844`
+- Density normalization: source contact sheet and browser captures were scaled with aspect ratio preserved only for the combined comparison sheet. Motion pose and timing order were compared; the reference portrait stage and the app's landscape battle arena were not treated as an identical layout target.
+
+### 발견·수정 이력
+
+1. [P1] 기존 전투원은 처음부터 적을 향한 후면 조준 자세여서 예시의 급회전이 보이지 않았다.
+   - 수정: 정면 캐릭터 자산과 후면 조준 자산을 같은 슬롯에 겹치고, 3D 회전과 교차 전환으로 `960ms`의 정면 대기 → 회전 → 조준 → 반동 → 복귀 동작을 연결했다.
+   - Post-fix evidence: `work/battle-turn-idle-local-v2.png`와 `work/battle-fire-paused-360ms-local.png`.
+2. [P1] 총구와 적이 거의 붙어 탄환 이동이 짧고 정적으로 보였다.
+   - 수정: 전투원을 오른쪽 전경, 적을 왼쪽 원경으로 분리하고 탄환 이동 시간을 `430ms`로 늘렸다. 총구 섬광 뒤에 긴 대각선 탄도가 이동하고 도착 시 피격 폭발·적 흔들림·카메라 반동이 이어지도록 시점을 분리했다.
+   - Post-fix evidence: `work/battle-fire-paused-600ms-local.png`.
+3. [P2] 모바일에서 왼쪽 점수판이 원거리 적과 피격 효과를 가렸다.
+   - 수정: `390px` 전투 화면에서 점수판을 오른쪽으로 옮겨 적·탄도·충돌점을 노출했다.
+   - Post-fix evidence: `work/battle-fire-mobile-full-390x844-local-v2.png`.
+
+### 다섯 가지 필수 표면 확인
+
+- Fonts and typography: 기존 전투 UI 글꼴, 굵기, 수치 위계를 유지했고 모션 변경으로 글자 잘림이나 재배치가 생기지 않았다.
+- Spacing and layout rhythm: 데스크톱과 모바일 모두 전경 전투원과 원경 적 사이에 명확한 사격 거리가 생겼다. 모바일 `scrollWidth = clientWidth = 390`.
+- Colors and visual tokens: 기존 전투 색과 라임 조준점을 유지했다. 새 색·그라데이션·패널을 추가하지 않았다.
+- Image quality and asset fidelity: 기존 정면/후면 투명 WebP와 기존 투명 총구·탄도·피격 자산만 사용했다. 사각 배경이나 투명도 테두리가 없다.
+- Copy and content: 보스 체력, 점수, 콤보, 타수, 정확도와 현재 구절은 기존 실제 상태를 그대로 사용한다.
+
+### 동작·접근성 확인
+
+- 정답 입력 한 글자가 실제 피해, 점수, 콤보와 함께 새 모션을 시작한다.
+- 빠른 다음 입력은 최신 피드백 키로 애니메이션을 다시 시작한다.
+- `prefers-reduced-motion`에서는 전투원 회전, 총구, 탄도, 피격 애니메이션이 제거된다.
+- 데스크톱과 `390×844`에서 입력창, 작전 지도, 체력, 통계가 계속 접근 가능하다.
+- 브라우저 콘솔 오류는 0건이다.
+
+### 심각도별 미해결 항목
+
+- P0: 없음
+- P1: 없음
+- P2: 없음
+
+final result: passed

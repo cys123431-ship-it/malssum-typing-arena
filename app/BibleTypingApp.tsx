@@ -1767,13 +1767,23 @@ export function BibleTypingApp() {
                               <strong>{selectedFighter.name}</strong>
                             </div>
                             <Image
-                              className="battle-fighter"
+                              className="battle-fighter battle-fighter--idle"
+                              src={selectedFighter.asset}
+                              width={selectedFighter.width}
+                              height={selectedFighter.height}
+                              sizes="(max-width: 820px) 78vw, 38vw"
+                              priority
+                              alt={`${selectedFighter.name} 전투원`}
+                            />
+                            <Image
+                              className="battle-fighter battle-fighter--aim"
                               src={selectedFighter.battleAsset}
                               width={selectedFighter.battleWidth}
                               height={selectedFighter.battleHeight}
-                              sizes="(max-width: 820px) 78vw, 44vw"
+                              sizes="(max-width: 820px) 78vw, 38vw"
                               priority
-                              alt={`${selectedFighter.weapon}을 든 전투원 ${selectedFighter.name}`}
+                              alt=""
+                              aria-hidden="true"
                             />
                           </div>
 
