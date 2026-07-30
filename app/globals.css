@@ -5130,7 +5130,7 @@ html[data-theme="dark"] .console-live-stats span {
 .battle-fighter--aim {
   z-index: 1;
   opacity: 0;
-  transform: rotateY(82deg) translateY(10px) scale(0.96);
+  transform: rotateY(82deg) translateY(10px) scaleX(-1) scale(0.96);
   transform-origin: 54% 72%;
 }
 
@@ -8268,7 +8268,7 @@ html[data-theme="dark"] .battle-practice {
 .battle-fighter-wrap--arin {
   z-index: 6;
   bottom: -20%;
-  left: 56%;
+  left: 64%;
   width: min(36vw, 490px);
   max-width: none;
   height: 118%;
@@ -8355,7 +8355,7 @@ html[data-theme="dark"] .battle-practice {
 .battle-projectile {
   z-index: 11;
   top: 13%;
-  left: 47%;
+  left: 42%;
   width: min(18vw, 238px);
   object-fit: contain;
   opacity: 0;
@@ -8367,7 +8367,7 @@ html[data-theme="dark"] .battle-practice {
 .battle-muzzle {
   z-index: 12;
   top: 17%;
-  left: 59%;
+  left: 49%;
   width: min(7vw, 92px);
   object-fit: contain;
   opacity: 0;
@@ -8472,14 +8472,14 @@ html[data-theme="dark"] .battle-practice {
 }
 
 @keyframes battle-fighter-aim-turn {
-  0%, 16% { opacity: 0; transform: rotateY(84deg) translateY(10px) scale(0.96); }
-  24% { opacity: 0.72; transform: rotateY(32deg) translateY(3px) scale(0.99); }
-  29% { opacity: 1; transform: rotateY(0deg) translateY(0) scale(1); }
-  36% { opacity: 1; transform: rotateY(0deg) translate(-8px, 12px) rotateZ(-2.6deg) scale(0.965); }
-  48% { opacity: 1; transform: rotateY(0deg) translate(4px, -3px) rotateZ(0.6deg) scale(1.006); }
-  68%, 75% { opacity: 1; transform: rotateY(0deg) translateY(0) scale(1); }
-  84% { opacity: 0.46; transform: rotateY(-64deg) translateY(3px) scale(0.98); }
-  89%, 100% { opacity: 0; transform: rotateY(-88deg) translateY(8px) scale(0.96); }
+  0%, 16% { opacity: 0; transform: rotateY(84deg) translateY(10px) scaleX(-1) scale(0.96); }
+  24% { opacity: 0.72; transform: rotateY(32deg) translateY(3px) scaleX(-1) scale(0.99); }
+  29% { opacity: 1; transform: rotateY(0deg) translateY(0) scaleX(-1) scale(1); }
+  36% { opacity: 1; transform: rotateY(0deg) translate(8px, 12px) rotateZ(2.6deg) scaleX(-1) scale(0.965); }
+  48% { opacity: 1; transform: rotateY(0deg) translate(-4px, -3px) rotateZ(-0.6deg) scaleX(-1) scale(1.006); }
+  68%, 75% { opacity: 1; transform: rotateY(0deg) translateY(0) scaleX(-1) scale(1); }
+  84% { opacity: 0.46; transform: rotateY(-64deg) translateY(3px) scaleX(-1) scale(0.98); }
+  89%, 100% { opacity: 0; transform: rotateY(-88deg) translateY(8px) scaleX(-1) scale(0.96); }
 }
 
 @keyframes battle-fighter-depth-recoil {
@@ -8534,7 +8534,7 @@ html[data-theme="dark"] .battle-practice {
   .battle-fighter-wrap--hana,
   .battle-fighter-wrap--arin {
     bottom: -22%;
-    left: 60%;
+    left: 72%;
     width: min(68vw, 292px);
     max-width: none;
     height: 120%;
@@ -8560,13 +8560,13 @@ html[data-theme="dark"] .battle-practice {
 
   .battle-muzzle {
     top: 17%;
-    left: 65%;
+    left: 48%;
     width: min(18vw, 70px);
   }
 
   .battle-projectile {
     top: 12%;
-    left: 39%;
+    left: 31%;
     width: min(45vw, 176px);
   }
 

@@ -159,6 +159,31 @@ final result: blocked
 
 final result: passed
 
+## Battle firing-direction addendum — 2026-07-30
+
+### Source truth and initial finding
+
+- User-reported issue: the enemy was positioned on the left while the fighter's firing pose and gun barrel still pointed to the right.
+- Pre-fix evidence: `work/battle-fire-public-v25-retry.png`.
+- [P1] The tracer crossed toward the enemy, but the character pose contradicted the shot direction.
+
+### Fix and post-fix evidence
+
+- Mirrored the firing pose so the character and weapon physically face the left-side enemy.
+- Reversed the horizontal recoil/settle motion to match a leftward shot.
+- Re-aligned the muzzle flash, projectile origin, travel path, and impact with the mirrored barrel.
+- Desktop muzzle evidence: `work/battle-fire-left-local-v26.png`.
+- Desktop impact evidence: `work/battle-impact-left-local-v26.png`.
+- Mobile evidence: `work/battle-fire-left-mobile-local-v26.png`, `work/battle-aim-left-mobile-local-v26.png`.
+
+### Remaining visual findings
+
+- P0: none
+- P1: none
+- P2: none
+
+final result: passed
+
 ## 전투원 급회전·원거리 사격 모션 addendum — 2026-07-28
 
 ### 시각 원본과 구현 증거
