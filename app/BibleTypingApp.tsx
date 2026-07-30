@@ -1770,7 +1770,7 @@ export function BibleTypingApp() {
             <div className="page page--practice">
               {practiceMode === "battle" ? (
                 <section
-                  className={`battle-practice ${result ? "is-complete" : ""} ${battleFeedback ? `is-${battleFeedback.kind}` : ""}`}
+                  className={`battle-practice ${result ? "is-complete" : ""} ${battleFeedback ? `is-${battleFeedback.kind} is-strength-${battleFeedback.strength}` : ""}`}
                   style={{ "--fighter-accent": selectedFighter.accent } as CSSProperties}
                 >
                   <header className="battle-header">
@@ -1862,12 +1862,20 @@ export function BibleTypingApp() {
                               <span>LOCKED</span>
                             </div>
                             <Image
-                              className="battle-enemy"
+                              className="battle-enemy battle-enemy--main"
                               src={activeBattleStage.asset}
                               width={activeBattleStage.width}
                               height={activeBattleStage.height}
                               priority
                               alt={`말씀의 힘에 맞서는 ${activeBattleStage.enemy}`}
+                            />
+                            <Image
+                              className="battle-enemy battle-enemy--afterimage"
+                              src={activeBattleStage.asset}
+                              width={activeBattleStage.width}
+                              height={activeBattleStage.height}
+                              alt=""
+                              aria-hidden="true"
                             />
                           </div>
 
@@ -1875,7 +1883,8 @@ export function BibleTypingApp() {
                             <div className={`battle-hit-fx is-strength-${battleFeedback.strength}`} key={`hit-${battleFeedback.id}`} aria-hidden="true">
                               <Image className="battle-muzzle" src="/game-assets/effects/battle-muzzle-flash-v2.webp" width={515} height={488} alt="" />
                               <Image className="battle-projectile" src="/game-assets/effects/battle-tracer-v2.webp" width={1187} height={638} alt="" />
-                              <Image className="battle-impact" src="/game-assets/effects/battle-impact-v2.webp" width={760} height={714} alt="" />
+                              <Image className="battle-impact battle-impact--echo" src="/game-assets/effects/battle-impact-v2.webp" width={760} height={714} alt="" />
+                              <Image className="battle-impact battle-impact--core" src="/game-assets/effects/battle-impact-v2.webp" width={760} height={714} alt="" />
                               <strong className="battle-hit-callout">{battleFeedback.strength === 3 ? "PERFECT" : battleFeedback.strength === 2 ? "POWER HIT" : "HIT"}</strong>
                             </div>
                           )}

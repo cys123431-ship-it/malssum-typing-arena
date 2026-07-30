@@ -159,6 +159,41 @@ final result: blocked
 
 final result: passed
 
+## NIKKE-inspired layered combat-motion addendum — 2026-07-30
+
+### Motion sources and scope
+
+- Official motion reference: `https://www.youtube.com/watch?v=JjcR8wuWEC4` (official NIKKE trailer).
+- Supporting gameplay reference: `https://www.youtube.com/watch?v=D9Cu8MWzFyE` (sponsored first-gameplay capture).
+- Scope was deliberately limited to motion timing and feedback principles: anticipation, pose swap, weapon recoil, projectile travel, impact hold, enemy knockback, secondary settle, and strength escalation. No NIKKE character art, effects, UI, copy, or other assets were copied.
+- Implementation sequence: `work/battle-motion-sequence-v28.png`.
+- Individual desktop frames: `work/battle-motion-turn-v28.png`, `work/battle-motion-impact-v28.png`, `work/battle-motion-recovery-v28.png`.
+- Keyboard-open mobile frame: `work/battle-motion-mobile-keyboard-v28.png`.
+
+### Findings and fixes
+
+1. [P1] The previous hit response was one short brightness-and-shake animation, so the enemy did not appear to absorb force.
+   - Fixed with a multi-phase response: compression and hit stop, directional knockback, opposite rebound, two smaller settling oscillations, and a final neutral pose.
+2. [P1] Player fire, projectile, impact, camera motion, target lock, and health feedback read as separate events.
+   - Retimed them as one 720ms shot cycle. The turn begins first, muzzle and tracer follow, and the enemy/camera/health reactions start at contact.
+3. [P1] Every hit had nearly the same perceived weight.
+   - Connected the existing combo strength values to three knockback distances, camera impulses, impact sizes, and callouts.
+4. [P2] A single impact image disappeared too quickly to sell the contact.
+   - Added a second real impact-asset instance as a delayed echo and a short enemy afterimage. The original assets remain unchanged.
+
+### Responsive and accessibility checks
+
+- Desktop visual QA: `1440×1024`.
+- Mobile visual QA: `390×844`; `scrollWidth = clientWidth = 390`.
+- Keyboard-open simulation: `390×500`; battle field remained visible above the input bar and `scrollWidth = clientWidth = 390`.
+- `prefers-reduced-motion` disables the new field impulse, enemy knockback, afterimage, surface flash, and health-bar response.
+- Existing typing, accuracy, combo, damage, stage, routing, and focus behavior remained connected to live state.
+- P0: none
+- P1: none
+- P2: none
+
+final result: passed
+
 ## 모바일 키보드 전투 가시성 addendum — 2026-07-30
 
 ### 시각 원본과 구현 증거
