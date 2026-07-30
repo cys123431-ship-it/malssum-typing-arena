@@ -115,6 +115,8 @@ test("adds the optional Bible word battle without replacing standard practice", 
   assert.match(css, /battle-fighter-aim-turn 960ms/);
   assert.match(css, /\.battle-fighter--aim\s*\{[^}]*scaleX\(-1\)/s);
   assert.match(css, /battle-depth-projectile 430ms/);
+  assert.match(app, /window\.visualViewport/);
+  assert.match(css, /data-battle-keyboard="open"/);
 });
 
 test("keeps battle typing connected to the existing accuracy and completion logic", async () => {

@@ -5574,6 +5574,188 @@ html[data-theme="dark"] .console-live-stats span {
   }
 }
 
+/* Keep the battle visible inside the reduced visual viewport while a mobile keyboard is open. */
+@media (max-width: 820px) {
+  html[data-battle-keyboard="open"],
+  html[data-battle-keyboard="open"] body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  html[data-battle-keyboard="open"] .app-frame--practice {
+    position: fixed;
+    z-index: 100;
+    top: var(--battle-viewport-top, 0);
+    left: 0;
+    width: 100%;
+    height: var(--battle-viewport-height, 100dvh);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  html[data-battle-keyboard="open"] .app-frame--practice .workspace,
+  html[data-battle-keyboard="open"] .app-frame--practice .main-content,
+  html[data-battle-keyboard="open"] .app-frame--practice .page--practice,
+  html[data-battle-keyboard="open"] .battle-practice {
+    width: 100%;
+    height: var(--battle-viewport-height, 100dvh);
+    min-height: 0;
+    max-height: var(--battle-viewport-height, 100dvh);
+    overflow: hidden;
+  }
+
+  html[data-battle-keyboard="open"] .battle-practice {
+    grid-template-rows: 44px minmax(0, 1fr);
+  }
+
+  html[data-battle-keyboard="open"] .battle-header {
+    min-height: 44px;
+    padding: 0 8px;
+    grid-template-columns: 76px minmax(0, 1fr) 52px;
+    gap: 6px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-header button {
+    min-height: 40px;
+    font-size: 8px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-header span,
+  html[data-battle-keyboard="open"] .battle-header > p {
+    display: none;
+  }
+
+  html[data-battle-keyboard="open"] .battle-header h1 {
+    font-size: 11px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-header .battle-fx-toggle {
+    min-width: 52px;
+    padding: 0 4px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-shell {
+    min-height: 0;
+    grid-template-rows: minmax(136px, 48%) minmax(0, 52%);
+  }
+
+  html[data-battle-keyboard="open"] .battle-arena {
+    grid-template-rows: 38px minmax(0, 1fr);
+  }
+
+  html[data-battle-keyboard="open"] .battle-boss-bar {
+    padding: 4px 12px 3px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-boss-bar span {
+    font-size: 8px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-boss-bar strong {
+    font-size: 15px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-boss-bar small {
+    font-size: 8px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-health-track {
+    height: 4px;
+    margin-top: 3px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-power-meter {
+    top: 5px;
+    right: 5px;
+    min-width: 78px;
+    padding: 4px 5px 4px 7px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-power-meter > span,
+  html[data-battle-keyboard="open"] .battle-power-meter > small {
+    display: none;
+  }
+
+  html[data-battle-keyboard="open"] .battle-power-meter > strong {
+    margin: 0;
+    font-size: 20px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-power-meter > div {
+    margin-top: 3px;
+    font-size: 7px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-power-meter b {
+    font-size: 13px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-player-health {
+    min-width: 74px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-fighter-name {
+    display: none;
+  }
+
+  html[data-battle-keyboard="open"] .battle-type-stage {
+    grid-template-rows: 30px minmax(0, 1fr) 54px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-live-stats span {
+    gap: 4px;
+    font-size: 8px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-live-stats strong {
+    font-size: 13px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-word-queue {
+    padding: 7px 12px 4px;
+    gap: 4px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-current-word {
+    font-size: clamp(30px, 10vw, 40px);
+  }
+
+  html[data-battle-keyboard="open"] .battle-current-word.is-long-word {
+    font-size: clamp(25px, 8vw, 34px);
+  }
+
+  html[data-battle-keyboard="open"] .battle-current-word.is-very-long-word {
+    font-size: clamp(21px, 6.7vw, 28px);
+  }
+
+  html[data-battle-keyboard="open"] .battle-next-word--1 {
+    font-size: clamp(19px, 6vw, 25px);
+  }
+
+  html[data-battle-keyboard="open"] .battle-next-word--2 {
+    display: none;
+  }
+
+  html[data-battle-keyboard="open"] .battle-input-bar {
+    padding: 4px 6px;
+    grid-template-columns: minmax(0, 1fr) 72px;
+    gap: 5px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-input-bar textarea {
+    height: 44px;
+    min-height: 44px;
+    padding: 8px 8px 6px 11px;
+    font-size: 16px;
+  }
+
+  html[data-battle-keyboard="open"] .battle-input-bar button {
+    min-width: 72px;
+    min-height: 44px;
+    font-size: 9px;
+  }
+}
+
 .battle-fighter {
   animation: battle-depth-idle 2.8s ease-in-out infinite;
 }

@@ -1,9 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 
 const title = "말씀타자 — 성경으로 채우는 타자 습관";
 const description = "성경 66권 타자연습과 25단계 말씀 전투를 즐기고, 선수 아이디로 점수와 실시간 랭킹을 기록하는 웹게임";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const incomingHeaders = await headers();

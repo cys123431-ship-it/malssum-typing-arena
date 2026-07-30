@@ -633,6 +633,64 @@ export function BibleTypingApp() {
   const battleRewardedRef = useRef(false);
 
   useEffect(() => {
+    const root = document.documentElement;
+    if (view !== "practice" || practiceMode !== "battle") {
+      delete root.dataset.battleKeyboard;
+      root.style.removeProperty("--battle-viewport-height");
+      root.style.removeProperty("--battle-viewport-top");
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    const battleInput = inputRef.current;
+    let baselineHeight = Math.max(window.innerHeight, viewport?.height ?? 0);
+    let scrollFrame = 0;
+
+    const syncBattleViewport = () => {
+      const viewportHeight = Math.round(viewport?.height ?? window.innerHeight);
+      const viewportWidth = Math.round(viewport?.width ?? window.innerWidth);
+      const viewportTop = Math.round(viewport?.offsetTop ?? 0);
+      const inputFocused = document.activeElement === battleInput;
+
+      if (!inputFocused && viewportHeight > baselineHeight - 80) {
+        baselineHeight = Math.max(baselineHeight, viewportHeight);
+      }
+
+      const keyboardOpen = viewportWidth <= 820
+        && inputFocused
+        && baselineHeight - viewportHeight > Math.max(120, baselineHeight * 0.18);
+
+      root.dataset.battleKeyboard = keyboardOpen ? "open" : "closed";
+      root.style.setProperty("--battle-viewport-height", `${viewportHeight}px`);
+      root.style.setProperty("--battle-viewport-top", `${viewportTop}px`);
+
+      if (keyboardOpen) {
+        window.cancelAnimationFrame(scrollFrame);
+        scrollFrame = window.requestAnimationFrame(() => window.scrollTo(0, 0));
+      }
+    };
+
+    syncBattleViewport();
+    viewport?.addEventListener("resize", syncBattleViewport);
+    viewport?.addEventListener("scroll", syncBattleViewport);
+    window.addEventListener("resize", syncBattleViewport);
+    battleInput?.addEventListener("focus", syncBattleViewport);
+    battleInput?.addEventListener("blur", syncBattleViewport);
+
+    return () => {
+      window.cancelAnimationFrame(scrollFrame);
+      viewport?.removeEventListener("resize", syncBattleViewport);
+      viewport?.removeEventListener("scroll", syncBattleViewport);
+      window.removeEventListener("resize", syncBattleViewport);
+      battleInput?.removeEventListener("focus", syncBattleViewport);
+      battleInput?.removeEventListener("blur", syncBattleViewport);
+      delete root.dataset.battleKeyboard;
+      root.style.removeProperty("--battle-viewport-height");
+      root.style.removeProperty("--battle-viewport-top");
+    };
+  }, [practiceMode, view]);
+
+  useEffect(() => {
     const savedTheme = window.localStorage.getItem("bible-typing-theme");
     const preferredDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     // Hydrate the existing persisted preference after the client mounts.

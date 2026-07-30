@@ -159,6 +159,51 @@ final result: blocked
 
 final result: passed
 
+## 모바일 키보드 전투 가시성 addendum — 2026-07-30
+
+### 시각 원본과 구현 증거
+
+- Source visual truth: 사용자가 보고한 “쿼티 키보드가 올라오면 전투 장면이 사라지고 입력만 남는” 실제 모바일 사용 상태.
+- Pre-fix production capture: `work/mobile-keyboard-before-public-v26.png`.
+- Post-fix implementation capture: `work/mobile-keyboard-fire-local-v27.png`.
+- Full-view before/after comparison: `work/mobile-keyboard-before-after-v27.png` (왼쪽: 기존 공개 화면, 오른쪽: 수정 화면).
+- Viewport: CSS `390×430`, device scale factor `1`, PNG `390×430`. `430px` 높이는 `390×844` 기기에서 쿼티 키보드가 화면 아래를 차지한 뒤 남는 가시 영역을 재현한다.
+- State: 말씀 전투 1단계, 입력창 포커스, 키보드 열림, 정답 한 글자 입력과 사격 효과 실행.
+
+### 발견·수정 이력
+
+1. [P1] 기존 화면은 키보드 높이에서 입력창 하단이 잘리고 현재 단어가 가시 영역 밖으로 밀렸다.
+   - 증거: pre-fix 캡처에서 전투장은 고정 높이를 유지하고 입력창은 뷰포트 아래로 잘린다.
+   - 수정: `VisualViewport` 높이와 입력 포커스를 연결해 실제 키보드 열림 상태를 감지하고, 앱 높이를 남은 가시 영역에 고정했다.
+2. [P1] 키보드가 열린 상태에서 전투 장면과 입력 단어를 동시에 볼 수 없었다.
+   - 수정: 키보드 전용 압축 레이아웃에서 상단 명령 바, 전투장, 통계, 현재 단어, 입력창을 한 화면에 재배치했다.
+   - Post-fix evidence: `work/mobile-keyboard-fire-local-v27.png`.
+3. [P2] 브라우저의 입력창 자동 스크롤이 전투장을 화면 밖으로 밀 수 있었다.
+   - 수정: 키보드가 열린 동안 전투 화면을 가시 뷰포트에 고정하고 문서 스크롤을 잠갔다.
+
+### 다섯 가지 필수 표면 확인
+
+- Fonts and typography: 현재 단어를 키보드 상태에서도 가장 큰 텍스트로 유지했고 다음 단어는 한 단계만 노출한다.
+- Spacing and layout rhythm: `390×430`에서 전투장 `185px`, 입력 영역 `201px`로 분리되며 입력창 하단은 `425px`에 위치해 잘리지 않는다.
+- Colors and visual tokens: 기존 전투 배경, 라임 커서, 체력 색상과 구분선을 그대로 유지한다.
+- Image quality and asset fidelity: 캐릭터, 적, 전장, 총구와 탄도 자산의 비율 및 투명도를 변경하지 않았다.
+- Copy and content: 보스 체력, 점수, 콤보, 타수, 정확도, 현재 단어와 입력값은 기존 실제 상태를 사용한다.
+
+### 동작·접근성 확인
+
+- `390×500`과 `390×430`에서 `scrollY = 0`, 입력창과 작전 지도 버튼이 모두 가시 영역 안에 있다.
+- 키보드 상태에서 정답 한 글자를 입력하면 피해·점수·콤보와 사격 모션이 정상 실행된다.
+- 입력창 포커스와 기존 문자 입력, 한글 조합, `Esc` 동작을 변경하지 않았다.
+- 브라우저 콘솔 경고·오류는 0건이다.
+
+### 심각도별 미해결 항목
+
+- P0: 없음
+- P1: 없음
+- P2: 없음
+
+final result: passed
+
 ## Battle firing-direction addendum — 2026-07-30
 
 ### Source truth and initial finding
